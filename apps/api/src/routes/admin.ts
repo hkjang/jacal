@@ -7,7 +7,7 @@ const router = Router();
 // Admin middleware
 const adminMiddleware = async (req: Request, res: Response, next: any) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const user = await prisma.user.findUnique({ where: { id: userId } });
     
     if (!user?.isAdmin) {

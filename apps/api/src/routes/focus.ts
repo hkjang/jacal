@@ -7,7 +7,7 @@ const router = Router();
 // Get suggested focus time blocks
 router.get('/suggestions', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const weekStart = new Date();
     
     const focusBlocks = await autoScheduler.findFocusBlocks(userId, weekStart);
@@ -28,7 +28,7 @@ router.get('/suggestions', authMiddleware, async (req: Request, res: Response) =
 // Protect focus time by creating events
 router.post('/protect', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     
     const createdBlocks = await autoScheduler.protectFocusTime(userId);
     

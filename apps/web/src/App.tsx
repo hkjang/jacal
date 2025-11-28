@@ -1,31 +1,40 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { eventAPI, taskAPI, nluAPI, authAPI, schedulerAPI, focusAPI, Event, Task } from './lib/api';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { eventAPI, taskAPI, Event, Task } from './lib/api';
 import Settings from './components/Settings';
 import Calendar from './components/Calendar';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from './hooks/useAuth';
+import { useNaturalInput } from './hooks/useNaturalInput';
+import { useScheduler } from './hooks/useScheduler';
+import { useFocus } from './hooks/useFocus';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import './App.css';
 
 function App() {
   const { t, i18n } = useTranslation();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loginMode, setLoginMode] = useState<'login' | 'register'>('login');
   const [view, setView] = useState<'home' | 'calendar' | 'settings'>('home');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [naturalInput, setNaturalInput] = useState('');
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   
-  const queryClient = useQueryClient();
+  const { 
+    isAuthenticated, 
+    isAdmin, 
+    loginMode, 
+    setLoginMode, 
+    email, 
+    setEmail, 
+    password, 
+    setPassword, 
+    name, 
+    setName, 
+    handleAuth, 
+    handleLogout 
+  } = useAuth();
 
-  // Check if user is logged in
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      setIsAuthenticated(true);
-    }
-  }, []);
+  const { naturalInput, setNaturalInput, handleNaturalInput, parseMutation } = useNaturalInput();
+  const { autoScheduleMutation } = useScheduler();
+  const { focusTimeMutation } = useFocus();
 
   // Fetch events and tasks
   const { data: events = [] } = useQuery<Event[]>({
@@ -40,98 +49,44 @@ function App() {
     enabled: isAuthenticated,
   });
 
-  // Natural language parsing mutation
-  const parseMutation = useMutation({
-    mutationFn: (input: string) => nluAPI.parse(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      setNaturalInput('');
-    },
-  });
-
-  // Auto-schedule mutation
-  const autoScheduleMutation = useMutation({
-    mutationFn: schedulerAPI.autoSchedule,
-    onSuccess: (data) => {
-      alert(`Scheduled ${data.scheduled} tasks!`);
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-    },
-    onError: () => {
-      alert('Failed to auto-schedule tasks');
-    },
-  });
-
-  // Focus time mutation
-  const focusTimeMutation = useMutation({
-    mutationFn: focusAPI.protect,
-    onSuccess: (data) => {
-      alert(`Protected ${data.protected} focus time blocks!`);
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-    },
-    onError: () => {
-      alert('Failed to protect focus time');
-    },
-  });
-
-  // Auth mutations
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (loginMode === 'login') {
-        const data = await authAPI.login(email, password);
-        localStorage.setItem('token', data.token);
-        setIsAuthenticated(true);
-        setIsAdmin(data.user.isAdmin || false);
-      } else {
-        const data = await authAPI.register(email, name, password);
-        localStorage.setItem('token', data.token);
-        setIsAuthenticated(true);
-        setIsAdmin(data.user.isAdmin || false);
-      }
-    } catch (error) {
-      console.error('Auth error:', error);
-      alert(t('auth.failed', '인증 실패'));
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setIsAuthenticated(false);
-  };
-
-  const handleNaturalInput = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!naturalInput.trim()) return;
-    parseMutation.mutate(naturalInput);
-  };
+  // Global keyboard shortcuts
+  useKeyboardShortcuts([
+    { key: '1', alt: true, handler: () => setView('home'), description: 'Go to Home' },
+    { key: '2', alt: true, handler: () => setView('calendar'), description: 'Go to Calendar' },
+    { key: '3', alt: true, handler: () => setView('settings'), description: 'Go to Settings' },
+    { key: '/', shift: true, handler: () => setShowShortcutsModal(true), description: 'Show shortcuts' },
+    { key: 'k', ctrlOrCmd: true, handler: () => {
+      const input = document.querySelector('.nlu-input') as HTMLInputElement;
+      if (input) input.focus();
+    }, description: 'Focus input' },
+  ], isAuthenticated);
 
   if (!isAuthenticated) {
     return (
       <div className="auth-container">
         <div className="auth-card">
           <h1 className="auth-title">Jacal</h1>
-          <p className="auth-subtitle">Your Intelligent Productivity Platform</p>
+          <p className="auth-subtitle">{t('app.subtitle', '지능형 생산성 플랫폼')}</p>
           
           <div className="auth-tabs">
             <button 
               className={`auth-tab ${loginMode === 'login' ? 'active' : ''}`}
               onClick={() => setLoginMode('login')}
             >
-              Login
+              {t('auth.login', '로그인')}
             </button>
             <button 
               className={`auth-tab ${loginMode === 'register' ? 'active' : ''}`}
               onClick={() => setLoginMode('register')}
             >
-              Register
+              {t('auth.register', '회원가입')}
             </button>
           </div>
 
           <form onSubmit={handleAuth} className="auth-form">
             {loginMode === 'register' && (
               <div className="form-group">
-                <label>Name</label>
+                <label>{t('auth.name', '이름')}</label>
                 <input
                   type="text"
                   value={name}
@@ -141,7 +96,7 @@ function App() {
               </div>
             )}
             <div className="form-group">
-              <label>Email</label>
+              <label>{t('auth.email', '이메일')}</label>
               <input
                 type="email"
                 value={email}
@@ -150,15 +105,16 @@ function App() {
               />
             </div>
             <div className="form-group">
-              <label>Password</label>
+              <label>{t('auth.password', '비밀번호')}</label>
               <input
-                type="password"value={password}
+                type="password"
+                value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
             <button type="submit" className="btn btn-primary">
-              {loginMode === 'login' ? 'Login' : 'Register'}
+              {loginMode === 'login' ? t('auth.login', '로그인') : t('auth.register', '회원가입')}
             </button>
           </form>
         </div>
@@ -184,6 +140,13 @@ function App() {
             <button onClick={() => setView('settings')} className={`btn ${view === 'settings' ? 'btn-primary' : 'btn-secondary'}`}>
               {t('nav.settings', '⚙️ 설정')}
             </button>
+            <button 
+              onClick={() => i18n.changeLanguage(i18n.language === 'ko' ? 'en' : 'ko')} 
+              className="btn btn-secondary"
+              title={i18n.language === 'ko' ? 'Switch to English' : '한국어로 전환'}
+            >
+              {i18n.language === 'ko' ? '🇬🇧 EN' : '🇰🇷 KR'}
+            </button>
             <button onClick={handleLogout} className="btn btn-secondary">
               {t('nav.logout', '로그아웃')}
             </button>
@@ -198,13 +161,13 @@ function App() {
       ) : (
       <main className="container">
         <section className="nlu-section">
-          <h2 className="section-title">Natural Language Input</h2>
+          <h2 className="section-title">{t('nlu.title', '자연어 입력')}</h2>
           <form onSubmit={handleNaturalInput} className="nlu-form">
             <input
               type="text"
               value={naturalInput}
               onChange={(e) => setNaturalInput(e.target.value)}
-              placeholder="Try: 내일 오전 9시 회의 1시간, 준비 30분 포함"
+              placeholder={t('nlu.placeholder', '예: 내일 오전 9시 회의 1시간, 준비 30분 포함')}
               className="nlu-input"
             />
             <button 
@@ -212,11 +175,11 @@ function App() {
               className="btn btn-primary"
               disabled={parseMutation.isPending}
             >
-              {parseMutation.isPending ? 'Parsing...' : 'Add'}
+              {parseMutation.isPending ? t('nlu.button.parsing', '분석 중...') : t('nlu.button.add', '추가')}
             </button>
           </form>
           {parseMutation.isError && (
-            <p className="error-message">Failed to parse input. Please check your API key in backend .env</p>
+            <p className="error-message">{t('nlu.error', '입력 분석 실패. 백엔드 .env 파일의 API 키를 확인해주세요.')}</p>
           )}
           
           <div className="flex gap-md" style={{ marginTop: '1rem' }}>
@@ -225,24 +188,24 @@ function App() {
               className="btn btn-secondary"
               disabled={autoScheduleMutation.isPending}
             >
-              {autoScheduleMutation.isPending ? 'Scheduling...' : '🤖 Auto-Schedule Tasks'}
+              {autoScheduleMutation.isPending ? t('actions.scheduling', '스케줄링 중...') : t('actions.autoSchedule', '🤖 작업 자동 스케줄링')}
             </button>
             <button 
               onClick={() => focusTimeMutation.mutate()} 
               className="btn btn-secondary"
               disabled={focusTimeMutation.isPending}
             >
-              {focusTimeMutation.isPending ? 'Protecting...' : '🎯 Protect Focus Time'}
+              {focusTimeMutation.isPending ? t('actions.protecting', '보호 중...') : t('actions.protectFocus', '🎯 집중 시간 보호')}
             </button>
           </div>
         </section>
 
         <div className="content-grid">
           <section className="events-section">
-            <h2 className="section-title">Events ({events.length})</h2>
+            <h2 className="section-title">{t('events.title', '일정')} ({events.length})</h2>
             <div className="items-list">
               {events.length === 0 ? (
-                <p className="text-secondary">No events yet. Try adding one using natural language!</p>
+                <p className="text-secondary">{t('events.empty', '아직 일정이 없습니다. 자연어로 추가해보세요!')}</p>
               ) : (
                 events.map((event) => (
                   <div key={event.id} className="card event-card">
@@ -270,10 +233,10 @@ function App() {
           </section>
 
           <section className="tasks-section">
-            <h2 className="section-title">Tasks ({tasks.length})</h2>
+            <h2 className="section-title">{t('tasks.title', '할 일')} ({tasks.length})</h2>
             <div className="items-list">
               {tasks.length === 0 ? (
-                <p className="text-secondary">No tasks yet. Try adding one using natural language!</p>
+                <p className="text-secondary">{t('tasks.empty', '아직 할 일이 없습니다. 자연어로 추가해보세요!')}</p>
               ) : (
                 tasks.map((task) => (
                   <div key={task.id} className="card task-card">
@@ -311,6 +274,11 @@ function App() {
         </div>
       </main>
       )}
+
+      <KeyboardShortcutsModal 
+        isOpen={showShortcutsModal}
+        onClose={() => setShowShortcutsModal(false)}
+      />
     </div>
   );
 }

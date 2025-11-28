@@ -27,7 +27,7 @@ router.get('/google/url', authMiddleware, (req: Request, res: Response) => {
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: scopes,
-    state: (req as any).user.userId, // Pass userId as state to identify user in callback
+    state: req.user!.userId, // Pass userId as state to identify user in callback
     prompt: 'consent' // Force consent to get refresh token
   });
 

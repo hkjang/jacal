@@ -1,3 +1,4 @@
+import './types/express';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -12,6 +13,7 @@ import analyticsRoutes from './routes/analytics';
 import adminRoutes from './routes/admin';
 import cron from 'node-cron';
 import { notificationService } from './services/notification';
+import { autoRegisterService } from './services/auto-register';
 
 dotenv.config();
 
@@ -48,5 +50,10 @@ app.listen(port, () => {
   // Schedule reminder check every minute
   cron.schedule('* * * * *', () => {
     notificationService.checkReminders();
+  });
+
+  // Schedule email check every 15 minutes
+  cron.schedule('*/15 * * * *', () => {
+    autoRegisterService.processNewEmails();
   });
 });

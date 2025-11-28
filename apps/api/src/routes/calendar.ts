@@ -7,7 +7,7 @@ const router = Router();
 // Sync Google Calendar
 router.post('/sync', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     await calendarService.syncGoogleCalendar(userId);
     res.json({ success: true, message: 'Calendar synced successfully' });
   } catch (error) {

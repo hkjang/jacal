@@ -28,6 +28,7 @@ model User {
   settings      UserSettings?
   webhookConfig WebhookConfig?
   connectedAccounts ConnectedAccount[]
+  processedEmails ProcessedEmail[]
   
   @@map("users")
 }
@@ -157,6 +158,11 @@ model UserSettings {
   ollamaEnabled   Boolean  @default(false)
   ollamaBaseUrl   String?
   ollamaModel     String?
+  pop3Enabled     Boolean  @default(false)
+  pop3Host        String?
+  pop3Port        Int?
+  pop3User        String?
+  pop3Password    String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -177,4 +183,16 @@ model WebhookConfig {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("webhook_configs")
+}
+
+model ProcessedEmail {
+  id        String   @id @default(uuid())
+  userId    String
+  uidl      String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, uidl])
+  @@map("processed_emails")
 }

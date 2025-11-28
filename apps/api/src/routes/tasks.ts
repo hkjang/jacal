@@ -7,7 +7,7 @@ const router = Router();
 // Get all tasks for current user
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const tasks = await prisma.task.findMany({
       where: { userId },
       include: { tags: true, reminders: true },
@@ -23,7 +23,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 // Create task
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { title, description, dueAt, estimatedMinutes, priority, reminders } = req.body;
 
     const task = await prisma.task.create({
@@ -54,7 +54,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 // Update task
 router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { id } = req.params;
     const { title, description, dueAt, estimatedMinutes, priority, status, reminders } = req.body;
 
@@ -88,7 +88,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 // Delete task
 router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { id } = req.params;
 
     await prisma.task.delete({
@@ -105,7 +105,7 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
 // Auto-schedule pending tasks
 router.post('/auto-schedule', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { autoScheduler } = await import('../services/scheduler');
     
     const scheduledEvents = await autoScheduler.scheduleTasks(userId);

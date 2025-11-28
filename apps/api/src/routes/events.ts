@@ -8,7 +8,7 @@ const router = Router();
 // Get all events for current user
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const events = await prisma.event.findMany({
       where: { userId },
       include: { tags: true, reminders: true },
@@ -24,7 +24,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 // Create event
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { title, description, startAt, endAt, location, reminders } = req.body;
 
     const event = await prisma.event.create({
@@ -59,7 +59,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 // Update event
 router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { id } = req.params;
     const { title, description, startAt, endAt, location, reminders } = req.body;
 
@@ -95,7 +95,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 // Delete event
 router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { id } = req.params;
 
     await prisma.event.delete({

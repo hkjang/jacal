@@ -127,3 +127,71 @@ ant),
     throw error;
   }
 }
+
+export async function parseEmailContent(subject: string, body: string, userId: string, timezone: string = 'UTC'): Promise<ParsedEntity[]> {
+  try {
+    const { client, model } = await getOpenAIClient(userId);
+
+    const systemPrompt = `You are a personal assistant that extracts schedule information from emails.
+Current timezone: ${timezone}
+Current date/time: ${new Date().toISOString()}
+
+Rules:
+1. Analyze the email subject and body.
+2. Extract any events or tasks mentioned.
+3. Ignore signatures, disclaimers, and irrelevant text.
+4. If multiple events are found, return all of them.
+5. If no clear event/task is found, return an empty array.
+
+Response format (MUST be valid JSON):
+{
+  "entities": [
+    {
+      "type": "event" | "task",
+      "title": string,
+      "description": string (optional),
+      "dueAt": ISO datetime string (for tasks),
+      "startAt": ISO datetime string (for events),
+      "endAt": ISO datetime string (for events),
+      "location": string (optional)
+    }
+  ]
+}`;
+
+    const completion = await client.chat.completions.create({
+      model: model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Subject: ${subject}\n\nBody:\n${body}` },
+      ],
+      temperature: 0.1, // Lower temperature for more deterministic extraction
+    });
+
+    const responseText = completion.choices[0]?.message?.content;
+    if (!responseText) return [];
+
+    console.log('Email Parsing Response:', responseText);
+
+    let cleanedResponse = responseText.trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/^```\s*/, '').replace(/```\s*$/, '');
+    }
+
+    const parsed = JSON.parse(cleanedResponse);
+    
+    if (Array.isArray(parsed)) {
+      return parsed;
+    } else if (parsed.entities && Array.isArray(parsed.entities)) {
+      return parsed.entities;
+    } else if (parsed.type) {
+      return [parsed];
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Email parsing error:', error);
+    return []; // Return empty on error to avoid crashing the batch
+  }
+}

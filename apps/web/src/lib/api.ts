@@ -121,6 +121,11 @@ export interface UserSettings {
   ollamaEnabled: boolean;
   ollamaBaseUrl?: string;
   ollamaModel?: string;
+  pop3Enabled: boolean;
+  pop3Host?: string;
+  pop3Port?: number;
+  pop3User?: string;
+  pop3Password?: string;
 }
 
 export interface WebhookConfig {
@@ -151,6 +156,12 @@ export const settingsAPI = {
   },
   testWebhook: async (): Promise<void> => {
     await api.post('/settings/webhook/test');
+  },
+  testEmailConnection: async (config: { host: string; port: number; user: string; password: string }): Promise<void> => {
+    await api.post('/settings/email/test', config);
+  },
+  syncEmail: async (): Promise<void> => {
+    await api.post('/settings/email/sync');
   },
 };
 

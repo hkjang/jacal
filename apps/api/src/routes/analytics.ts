@@ -8,7 +8,7 @@ const router = Router();
 // Get analytics dashboard data
 router.get('/dashboard', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { period = 'week' } = req.query; // week or month
     
     const daysCount = period === 'week' ? 7 : 30;
@@ -68,7 +68,7 @@ router.get('/dashboard', authMiddleware, async (req: Request, res: Response) => 
 // Get productivity trends
 router.get('/trends', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     
     // Last 30 days
     const startDate = new Date();
@@ -100,7 +100,7 @@ router.get('/trends', authMiddleware, async (req: Request, res: Response) => {
 // Calculate and update daily analytics (can be called by cron)
 router.post('/calculate', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     

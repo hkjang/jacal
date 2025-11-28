@@ -8,7 +8,7 @@ const router = Router();
 // Parse natural language and create tasks/events
 router.post('/parse', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user!.userId;
     const { input } = req.body;
 
     if (!input || typeof input !== 'string') {
