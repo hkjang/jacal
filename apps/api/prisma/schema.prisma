@@ -163,6 +163,7 @@ model UserSettings {
   pop3Port        Int?
   pop3User        String?
   pop3Password    String?
+  pop3Tls         Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

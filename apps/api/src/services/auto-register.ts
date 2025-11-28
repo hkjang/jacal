@@ -38,7 +38,6 @@ export class AutoRegisterService {
     await Promise.all(promises);
     console.log('Email check completed.');
   }
-
   async processUserEmails(settings: any) {
     if (!settings.pop3Host || !settings.pop3User || !settings.pop3Password) return;
 
@@ -47,7 +46,7 @@ export class AutoRegisterService {
       port: settings.pop3Port || 995,
       user: settings.pop3User,
       password: settings.pop3Password,
-      tls: true, // Assuming TLS for now, could be configurable
+      tls: settings.pop3Tls ?? true,
     });
 
     // Fetch last 10 emails to ensure we catch everything

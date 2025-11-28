@@ -47,6 +47,7 @@ router.put('/', authMiddleware, async (req: Request, res: Response) => {
         pop3Port: req.body.pop3Port ? parseInt(req.body.pop3Port) : undefined,
         pop3User: req.body.pop3User,
         pop3Password: req.body.pop3Password,
+        pop3Tls: req.body.pop3Tls,
       },
       update: {
         ollamaEnabled,
@@ -57,6 +58,7 @@ router.put('/', authMiddleware, async (req: Request, res: Response) => {
         pop3Port: req.body.pop3Port ? parseInt(req.body.pop3Port) : undefined,
         pop3User: req.body.pop3User,
         pop3Password: req.body.pop3Password,
+        pop3Tls: req.body.pop3Tls,
       },
     });
 
@@ -142,9 +144,9 @@ router.post('/webhook/test', authMiddleware, async (req: Request, res: Response)
 });
 
 // Test POP3 connection
-router.post('/email/test', authMiddleware, async (req: Request, res: Response) => {
+router.post('/email/test', authMiddleware, async (req, res) => {
   try {
-    const { host, port, user, password } = req.body;
+    const { host, port, user, password, tls } = req.body;
     
     // Dynamically import EmailService to avoid circular dependency issues if any
     const { EmailService } = await import('../services/email');
@@ -154,7 +156,7 @@ router.post('/email/test', authMiddleware, async (req: Request, res: Response) =
       port: parseInt(port),
       user,
       password,
-      tls: true,
+      tls: tls ?? true,
     });
 
     // Try to fetch 1 email to verify connection

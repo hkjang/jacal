@@ -126,6 +126,7 @@ export interface UserSettings {
   pop3Port?: number;
   pop3User?: string;
   pop3Password?: string;
+  pop3Tls?: boolean;
 }
 
 export interface WebhookConfig {
@@ -157,7 +158,7 @@ export const settingsAPI = {
   testWebhook: async (): Promise<void> => {
     await api.post('/settings/webhook/test');
   },
-  testEmailConnection: async (config: { host: string; port: number; user: string; password: string }): Promise<void> => {
+  testEmailConnection: async (config: { host: string; port: number; user: string; password: string; tls: boolean }): Promise<void> => {
     await api.post('/settings/email/test', config);
   },
   syncEmail: async (): Promise<void> => {

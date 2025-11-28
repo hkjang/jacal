@@ -7,7 +7,7 @@ interface SettingsEmailProps {
   settings?: UserSettings;
   onSave: (data: Partial<UserSettings>) => void;
   isSaving: boolean;
-  testEmailMutation: UseMutationResult<void, any, { host: string; port: number; user: string; password: string }, unknown>;
+  testEmailMutation: UseMutationResult<void, any, { host: string; port: number; user: string; password: string; tls: boolean }, unknown>;
   syncEmailMutation: UseMutationResult<void, any, void, unknown>;
 }
 
@@ -18,6 +18,7 @@ export default function SettingsEmail({ settings, onSave, isSaving, testEmailMut
   const [pop3Port, setPop3Port] = useState('995');
   const [pop3User, setPop3User] = useState('');
   const [pop3Password, setPop3Password] = useState('');
+  const [pop3Tls, setPop3Tls] = useState(true);
 
   useEffect(() => {
     if (settings) {
@@ -26,6 +27,7 @@ export default function SettingsEmail({ settings, onSave, isSaving, testEmailMut
       setPop3Port(settings.pop3Port?.toString() || '995');
       setPop3User(settings.pop3User || '');
       setPop3Password(settings.pop3Password || '');
+      setPop3Tls(settings.pop3Tls ?? true);
     }
   }, [settings]);
 
@@ -36,6 +38,7 @@ export default function SettingsEmail({ settings, onSave, isSaving, testEmailMut
       pop3Port: parseInt(pop3Port),
       pop3User,
       pop3Password,
+      pop3Tls,
     });
   };
 
@@ -80,6 +83,17 @@ export default function SettingsEmail({ settings, onSave, isSaving, testEmailMut
           </div>
 
           <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={pop3Tls}
+                onChange={(e) => setPop3Tls(e.target.checked)}
+              />
+              <span>{t('settings.email.tls', 'TLS 사용')}</span>
+            </label>
+          </div>
+
+          <div className="form-group">
             <label>{t('settings.email.user', '사용자 이름 (이메일)')}</label>
             <input
               type="text"
@@ -115,7 +129,8 @@ export default function SettingsEmail({ settings, onSave, isSaving, testEmailMut
             host: pop3Host,
             port: parseInt(pop3Port),
             user: pop3User,
-            password: pop3Password
+            password: pop3Password,
+            tls: pop3Tls
           })}
           className="btn btn-secondary"
           disabled={testEmailMutation.isPending || !pop3Enabled}
