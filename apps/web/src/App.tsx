@@ -10,11 +10,15 @@ import { useScheduler } from './hooks/useScheduler';
 import { useFocus } from './hooks/useFocus';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
+import AdminPanel from './components/AdminPanel';
+import HabitTracker from './components/HabitTracker';
+import Dashboard from './components/Dashboard';
+import TeamView from './components/TeamView';
 import './App.css';
 
 function App() {
   const { t, i18n } = useTranslation();
-  const [view, setView] = useState<'home' | 'calendar' | 'settings'>('home');
+  const [view, setView] = useState<'home' | 'calendar' | 'settings' | 'admin' | 'habits' | 'dashboard' | 'teams'>('home');
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   
   const { 
@@ -54,6 +58,7 @@ function App() {
     { key: '1', alt: true, handler: () => setView('home'), description: 'Go to Home' },
     { key: '2', alt: true, handler: () => setView('calendar'), description: 'Go to Calendar' },
     { key: '3', alt: true, handler: () => setView('settings'), description: 'Go to Settings' },
+    { key: '4', alt: true, handler: () => setView('admin'), description: 'Go to Admin', condition: isAdmin },
     { key: '/', shift: true, handler: () => setShowShortcutsModal(true), description: 'Show shortcuts' },
     { key: 'k', ctrlOrCmd: true, handler: () => {
       const input = document.querySelector('.nlu-input') as HTMLInputElement;
@@ -137,9 +142,23 @@ function App() {
             <button onClick={() => setView('calendar')} className={`btn ${view === 'calendar' ? 'btn-primary' : 'btn-secondary'}`}>
               📅 {t('calendar.title', '캘린더')}
             </button>
+            <button onClick={() => setView('habits')} className={`btn ${view === 'habits' ? 'btn-primary' : 'btn-secondary'}`}>
+              {t('nav.habits', '✅ 습관')}
+            </button>
+            <button onClick={() => setView('dashboard')} className={`btn ${view === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`}>
+              {t('nav.dashboard', '📊 대시보드')}
+            </button>
+            <button onClick={() => setView('teams')} className={`btn ${view === 'teams' ? 'btn-primary' : 'btn-secondary'}`}>
+              {t('nav.teams', '👥 팀')}
+            </button>
             <button onClick={() => setView('settings')} className={`btn ${view === 'settings' ? 'btn-primary' : 'btn-secondary'}`}>
               {t('nav.settings', '⚙️ 설정')}
             </button>
+            {isAdmin && (
+              <button onClick={() => setView('admin')} className={`btn ${view === 'admin' ? 'btn-primary' : 'btn-secondary'}`}>
+                {t('nav.admin', '👑 관리자')}
+              </button>
+            )}
             <button 
               onClick={() => i18n.changeLanguage(i18n.language === 'ko' ? 'en' : 'ko')} 
               className="btn btn-secondary"
@@ -158,6 +177,14 @@ function App() {
         <Settings />
       ) : view === 'calendar' ? (
         <Calendar isAdmin={isAdmin} />
+      ) : view === 'admin' ? (
+        <AdminPanel />
+      ) : view === 'habits' ? (
+        <HabitTracker />
+      ) : view === 'dashboard' ? (
+        <Dashboard />
+      ) : view === 'teams' ? (
+        <TeamView />
       ) : (
       <main className="container">
         <section className="nlu-section">

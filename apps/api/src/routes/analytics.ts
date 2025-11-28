@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import prisma from '../lib/prisma';
-import { Analytics } from '@prisma/client';
+import { Analytics, Habit } from '@prisma/client';
 
 const router = Router();
 
@@ -186,6 +186,47 @@ router.post('/calculate', authMiddleware, async (req: Request, res: Response) =>
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to calculate analytics' });
+  }
+});
+
+// Get habit statistics
+router.get('/habits', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const { period = 'week' } = req.query;
+    
+    const daysCount = period === 'week' ? 7 : 30;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysCount);
+    
+    const habits = await prisma.habit.findMany({
+      where: { userId },
+      include: {
+        logs: {
+          where: {
+            completedAt: { gte: startDate },
+          },
+        },
+      },
+    });
+    
+    const habitStats = habits.map((habit: Habit & { logs: any[] }) => {
+      const totalLogs = habit.logs.length;
+      const completionRate = (totalLogs / daysCount) * 100;
+      
+      return {
+        id: habit.id,
+        title: habit.title,
+        totalLogs,
+        completionRate,
+        color: habit.color,
+      };
+    });
+    
+    res.json(habitStats);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch habit analytics' });
   }
 });
 

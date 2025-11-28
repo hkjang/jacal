@@ -11,6 +11,8 @@ import calendarRoutes from './routes/calendar';
 import focusRoutes from './routes/focus';
 import analyticsRoutes from './routes/analytics';
 import adminRoutes from './routes/admin';
+import habitRoutes from './routes/habits';
+import teamRoutes from './routes/teams';
 import cron from 'node-cron';
 import { notificationService } from './services/notification';
 import { autoRegisterService } from './services/auto-register';
@@ -20,7 +22,10 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 
 // Routes
@@ -37,6 +42,8 @@ app.use('/api/calendar', calendarRoutes);
 app.use('/api/focus', focusRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/habits', habitRoutes);
+app.use('/api/teams', teamRoutes);
 
 // Error handling
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

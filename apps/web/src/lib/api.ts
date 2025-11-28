@@ -211,4 +211,8 @@ export const analyticsAPI = {
     const { data } = await api.post('/analytics/calculate');
     return data;
   },
+  getHabitStats: async (period: 'week' | 'month' = 'week'): Promise<any> => {
+    const { data } = await api.get(`/analytics/habits?period=${period}`);
+    return data;
+  },
 };

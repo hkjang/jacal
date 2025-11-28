@@ -8,6 +8,7 @@ type ShortcutConfig = {
   shift?: boolean;
   handler: ShortcutHandler;
   description: string;
+  condition?: boolean;
 };
 
 export function useKeyboardShortcuts(shortcuts: ShortcutConfig[], enabled: boolean = true) {
@@ -16,6 +17,9 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[], enabled: boole
 
     const handleKeyDown = (e: KeyboardEvent) => {
       for (const shortcut of shortcuts) {
+        // Skip if condition is false
+        if (shortcut.condition === false) continue;
+        
         const isCtrlOrCmdPressed = shortcut.ctrlOrCmd ? (e.ctrlKey || e.metaKey) : true;
         const isAltPressed = shortcut.alt ? e.altKey : !e.altKey;
         const isShiftPressed = shortcut.shift ? e.shiftKey : !e.shiftKey;
