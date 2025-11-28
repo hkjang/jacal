@@ -1,0 +1,80 @@
+{
+  "app": {
+    "title": "Jacal",
+    "subtitle": "Intelligent Productivity Platform"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "failed": "Authentication failed"
+  },
+  "nav": {
+    "home": "🏠 Home",
+    "settings": "⚙️ Settings",
+    "logout": "Logout"
+  },
+  "nlu": {
+    "title": "Natural Language Input",
+    "placeholder": "Try: Meeting tomorrow at 9am for 1 hour",
+    "button": {
+      "add": "Add",
+      "parsing": "Parsing..."
+    },
+    "error": "Failed to parse input. Please check your API key in backend .env"
+  },
+  "actions": {
+    "autoSchedule": "🤖 Auto-Schedule Tasks",
+    "scheduling": "Scheduling...",
+    "protectFocus": "🎯 Protect Focus Time",
+    "protecting": "Protecting...",
+    "scheduleSuccess": "Scheduled {{count}} tasks!",
+    "scheduleError": "Failed to auto-schedule tasks",
+    "focusSuccess": "Protected {{count}} focus time blocks!",
+    "focusError": "Failed to protect focus time"
+  },
+  "events": {
+    "title": "Events",
+    "empty": "No events yet. Try adding one using natural language!",
+    "location": "📍 {{location}}"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "empty": "No tasks yet. Try adding one using natural language!",
+    "due": "⏰ Due: {{date}}",
+    "est": "⏱️ Est: {{minutes}} minutes"
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "general": "General",
+      "webhooks": "Webhooks",
+      "integrations": "Integrations"
+    },
+    "webhooks": {
+      "enable": "Enable Webhooks",
+      "url": "Webhook URL",
+      "secret": "Webhook Secret",
+      "test": "Test Webhook",
+      "testing": "Testing...",
+      "success": "Webhook test successful!",
+      "error": "Webhook test failed"
+    },
+    "integrations": {
+      "googleCalendar": "Google Calendar",
+      "connect": "Connect",
+      "sync": "Sync Now",
+      "syncing": "Syncing...",
+      "syncSuccess": "Calendar sync successful!",
+      "syncError": "Calendar sync failed"
+    }
+  },
+  "calendar": {
+    "title": "Calendar",
+    "today": "Today",
+    "week": "Week",
+    "month": "Month"
+  }
+}

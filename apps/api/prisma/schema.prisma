@@ -17,6 +17,7 @@ model User {
   passwordHash  String?
   timezone      String   @default("UTC")
   preferences   Json?
+  isAdmin       Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -26,8 +27,26 @@ model User {
   analytics     Analytics[]
   settings      UserSettings?
   webhookConfig WebhookConfig?
+  connectedAccounts ConnectedAccount[]
   
   @@map("users")
+}
+
+model ConnectedAccount {
+  id            String   @id @default(uuid())
+  userId        String
+  provider      String   // google, outlook
+  providerId    String   // ID from provider
+  accessToken   String
+  refreshToken  String?
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@map("connected_accounts")
 }
 
 model Task {
@@ -119,8 +138,11 @@ model Analytics {
   userId          String
   date            DateTime @db.Date
   focusMinutes    Int      @default(0)
+  meetingMinutes  Int      @default(0)
   tasksCompleted  Int      @default(0)
+  tasksPlanned    Int      @default(0)
   eventsAttended  Int      @default(0)
+  productivityScore Float  @default(0)
   createdAt       DateTime @default(now())
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)

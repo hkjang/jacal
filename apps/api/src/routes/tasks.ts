@@ -24,7 +24,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.userId;
-    const { title, description, dueAt, estimatedMinutes, priority } = req.body;
+    const { title, description, dueAt, estimatedMinutes, priority, reminders } = req.body;
 
     const task = await prisma.task.create({
       data: {
@@ -34,7 +34,14 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         dueAt: dueAt ? new Date(dueAt) : null,
         estimatedMinutes,
         priority: priority || 0,
+        reminders: reminders ? {
+          create: reminders.map((r: any) => ({
+            notifyAt: new Date(r.notifyAt),
+            channel: r.channel || 'email',
+          })),
+        } : undefined,
       },
+      include: { reminders: true },
     });
 
     res.json(task);
@@ -49,7 +56,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.userId;
     const { id } = req.params;
-    const { title, description, dueAt, estimatedMinutes, priority, status } = req.body;
+    const { title, description, dueAt, estimatedMinutes, priority, status, reminders } = req.body;
 
     const task = await prisma.task.update({
       where: { id, userId },
@@ -60,7 +67,15 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
         estimatedMinutes,
         priority,
         status,
+        reminders: reminders ? {
+          deleteMany: {}, // Clear existing
+          create: reminders.map((r: any) => ({
+            notifyAt: new Date(r.notifyAt),
+            channel: r.channel || 'email',
+          })),
+        } : undefined,
       },
+      include: { reminders: true },
     });
 
     res.json(task);
@@ -84,6 +99,25 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to delete task' });
+  }
+});
+
+// Auto-schedule pending tasks
+router.post('/auto-schedule', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+    const { autoScheduler } = await import('../services/scheduler');
+    
+    const scheduledEvents = await autoScheduler.scheduleTasks(userId);
+    
+    res.json({ 
+      success: true, 
+      scheduled: scheduledEvents.length,
+      events: scheduledEvents 
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to auto-schedule tasks' });
   }
 });
 

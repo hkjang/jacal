@@ -18,6 +18,14 @@ export interface Task {
   priority: number;
   status: string;
   createdAt: string;
+  reminders?: Reminder[];
+}
+
+export interface Reminder {
+  id: string;
+  notifyAt: string;
+  channel: string;
+  sent: boolean;
 }
 
 export interface Event {
@@ -29,6 +37,7 @@ export interface Event {
   location?: string;
   sourceCalendar?: string;
   createdAt: string;
+  reminders?: Reminder[];
 }
 
 // Axios instance with auth token
@@ -138,6 +147,56 @@ export const settingsAPI = {
   },
   updateWebhookConfig: async (config: Partial<WebhookConfig>): Promise<WebhookConfig> => {
     const { data } = await api.put('/settings/webhook', config);
+    return data;
+  },
+  testWebhook: async (): Promise<void> => {
+    await api.post('/settings/webhook/test');
+  },
+};
+
+// Calendar API
+export const calendarAPI = {
+  getAuthUrl: async (): Promise<{ url: string }> => {
+    const { data } = await api.get('/auth/google/url');
+    return data;
+  },
+  sync: async (): Promise<void> => {
+    await api.post('/calendar/sync');
+  },
+};
+
+// Scheduler API
+export const schedulerAPI = {
+  autoSchedule: async (): Promise<{ success: boolean; scheduled: number; events: Event[] }> => {
+    const { data } = await api.post('/tasks/auto-schedule');
+    return data;
+  },
+};
+
+// Focus Time API
+export const focusAPI = {
+  getSuggestions: async (): Promise<{ blocks: any[] }> => {
+    const { data } = await api.get('/focus/suggestions');
+    return data;
+  },
+  protect: async (): Promise<{ success: boolean; protected: number; blocks: Event[] }> => {
+    const { data } = await api.post('/focus/protect');
+    return data;
+  },
+};
+
+// Analytics API
+export const analyticsAPI = {
+  getDashboard: async (period: 'week' | 'month' = 'week'): Promise<any> => {
+    const { data } = await api.get(`/analytics/dashboard?period=${period}`);
+    return data;
+  },
+  getTrends: async (): Promise<any> => {
+    const { data } = await api.get('/analytics/trends');
+    return data;
+  },
+  calculate: async (): Promise<any> => {
+    const { data } = await api.post('/analytics/calculate');
     return data;
   },
 };

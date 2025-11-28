@@ -25,7 +25,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.userId;
-    const { title, description, startAt, endAt, location } = req.body;
+    const { title, description, startAt, endAt, location, reminders } = req.body;
 
     const event = await prisma.event.create({
       data: {
@@ -36,11 +36,18 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         endAt: new Date(endAt),
         location,
         sourceCalendar: 'manual',
+        reminders: reminders ? {
+          create: reminders.map((r: any) => ({
+            notifyAt: new Date(r.notifyAt),
+            channel: r.channel || 'email',
+          })),
+        } : undefined,
       },
+      include: { reminders: true },
     });
 
     // Trigger webhook if configured
-    await triggerWebhook(userId, event);
+    await triggerWebhook(userId, 'create', event);
 
     res.json(event);
   } catch (error) {
@@ -54,7 +61,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.userId;
     const { id } = req.params;
-    const { title, description, startAt, endAt, location } = req.body;
+    const { title, description, startAt, endAt, location, reminders } = req.body;
 
     const event = await prisma.event.update({
       where: { id, userId },
@@ -64,10 +71,21 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
         startAt: startAt ? new Date(startAt) : undefined,
         endAt: endAt ? new Date(endAt) : undefined,
         location,
+        reminders: reminders ? {
+          deleteMany: {}, // Clear existing
+          create: reminders.map((r: any) => ({
+            notifyAt: new Date(r.notifyAt),
+            channel: r.channel || 'email',
+          })),
+        } : undefined,
       },
+      include: { reminders: true },
     });
 
     res.json(event);
+
+    // Trigger webhook
+    await triggerWebhook(userId, 'update', event);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to update event' });
@@ -85,6 +103,9 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
     });
 
     res.json({ message: 'Event deleted' });
+
+    // Trigger webhook (send id and deleted flag)
+    await triggerWebhook(userId, 'delete', { id, deleted: true });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to delete event' });

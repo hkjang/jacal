@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { authMiddleware } from '../middleware/auth';
+import { triggerWebhook } from '../services/webhook';
 
 const router = Router();
 
@@ -103,6 +104,29 @@ router.put('/webhook', authMiddleware, async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to update webhook config' });
+  }
+});
+
+// Test webhook
+router.post('/webhook/test', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+    
+    const testEvent = {
+      id: 'test-event-id',
+      title: 'Test Event',
+      description: 'This is a test event to verify webhook configuration',
+      startAt: new Date().toISOString(),
+      endAt: new Date(Date.now() + 3600000).toISOString(),
+      location: 'Test Location',
+    };
+
+    await triggerWebhook(userId, 'test', testEvent);
+
+    res.json({ success: true, message: 'Test webhook triggered' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to trigger test webhook' });
   }
 });
 

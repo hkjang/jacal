@@ -4,7 +4,9 @@ interface ColumnMapping {
   [key: string]: string; // Maps source column to target column
 }
 
-export async function triggerWebhook(userId: string, eventData: any): Promise<void> {
+export type WebhookAction = 'create' | 'update' | 'delete' | 'test';
+
+export async function triggerWebhook(userId: string, action: WebhookAction, eventData: any): Promise<void> {
   try {
     // Get user's webhook config
     const config = await prisma.webhookConfig.findUnique({
@@ -19,9 +21,15 @@ export async function triggerWebhook(userId: string, eventData: any): Promise<vo
     // Apply column mapping
     const mappedData = applyColumnMapping(eventData, config.columnMapping as ColumnMapping | null);
 
-    console.log('Triggering webhook:', config.url);
-    console.log('Mapped data:', mappedData);
+    // Construct final payload
+    const payload = {
+      action,
+      timestamp: new Date().toISOString(),
+      data: mappedData,
+    };
 
+    console.log(`Triggering webhook (${action}):`, config.url);
+    
     // Send webhook request
     const fetch = (await import('node-fetch')).default;
     const response = await fetch(config.url, {
@@ -29,13 +37,13 @@ export async function triggerWebhook(userId: string, eventData: any): Promise<vo
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(mappedData),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
       console.error('Webhook failed:', response.status, await response.text());
     } else {
-      console.log('Webhook sent successfully:', await response.text());
+      console.log('Webhook sent successfully');
     }
   } catch (error) {
     console.error('Webhook error:', error);
@@ -44,6 +52,8 @@ export async function triggerWebhook(userId: string, eventData: any): Promise<vo
 }
 
 function applyColumnMapping(data: any, mapping: ColumnMapping | null): any {
+  if (!data) return {};
+  
   if (!mapping || Object.keys(mapping).length === 0) {
     return data; // No mapping, return original data
   }

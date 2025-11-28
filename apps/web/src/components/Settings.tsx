@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { settingsAPI, UserSettings, WebhookConfig } from '../lib/api';
+import { settingsAPI, calendarAPI, UserSettings, WebhookConfig } from '../lib/api';
 import './Settings.css';
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState<'ollama' | 'webhook'>('ollama');
+  const [activeTab, setActiveTab] = useState<'ollama' | 'webhook' | 'integrations'>('ollama');
   const queryClient = useQueryClient();
 
   // Ollama settings state
@@ -65,6 +65,16 @@ export default function Settings() {
     },
   });
 
+  const testWebhookMutation = useMutation({
+    mutationFn: settingsAPI.testWebhook,
+    onSuccess: () => {
+      alert('Test webhook sent successfully!');
+    },
+    onError: () => {
+      alert('Failed to send test webhook. Check your URL and try again.');
+    },
+  });
+
   const handleSaveOllama = () => {
     updateSettingsMutation.mutate({
       ollamaEnabled,
@@ -95,6 +105,40 @@ export default function Settings() {
     setColumnMapping(updated);
   };
 
+  const handleConnectGoogle = async () => {
+    try {
+      const { url } = await calendarAPI.getAuthUrl();
+      window.location.href = url;
+    } catch (error) {
+      console.error('Failed to get auth url', error);
+      alert('Failed to start Google connection');
+    }
+  };
+
+  const handleSyncCalendar = useMutation({
+    mutationFn: calendarAPI.sync,
+    onSuccess: () => {
+      alert('Calendar synced successfully!');
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+    onError: () => {
+      alert('Failed to sync calendar');
+    },
+  });
+
+  // Check for success/error params in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status');
+    if (status === 'success') {
+      alert('Google Calendar connected successfully!');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (status === 'error') {
+      alert('Failed to connect Google Calendar');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   return (
     <div className="settings-container">
       <h1 className="settings-title">Settings</h1>
@@ -111,6 +155,12 @@ export default function Settings() {
           onClick={() => setActiveTab('webhook')}
         >
           🔗 Webhook Integration
+        </button>
+        <button
+          className={`settings-tab ${activeTab === 'integrations' ? 'active' : ''}`}
+          onClick={() => setActiveTab('integrations')}
+        >
+          📅 Integrations
         </button>
       </div>
 
@@ -263,6 +313,45 @@ export default function Settings() {
             >
               {updateWebhookMutation.isPending ? 'Saving...' : 'Save Webhook Config'}
             </button>
+
+            <button
+              onClick={() => testWebhookMutation.mutate()}
+              className="btn btn-secondary"
+              style={{ marginLeft: '1rem' }}
+              disabled={testWebhookMutation.isPending || !webhookEnabled}
+            >
+              {testWebhookMutation.isPending ? 'Testing...' : 'Test Webhook'}
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'integrations' && (
+          <div className="settings-panel">
+            <h2>Integrations</h2>
+            <p className="text-secondary">
+              Connect external services to sync data
+            </p>
+
+            <div className="card integration-card">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3>Google Calendar</h3>
+                  <p className="text-sm text-secondary">Sync events from your Google Calendar</p>
+                </div>
+                <div className="flex gap-sm">
+                  <button onClick={handleConnectGoogle} className="btn btn-secondary">
+                    Connect
+                  </button>
+                  <button 
+                    onClick={() => handleSyncCalendar.mutate()} 
+                    className="btn btn-primary"
+                    disabled={handleSyncCalendar.isPending}
+                  >
+                    {handleSyncCalendar.isPending ? 'Syncing...' : 'Sync Now'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

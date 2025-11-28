@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { eventAPI, taskAPI, nluAPI, authAPI, Event, Task } from './lib/api';
+import { eventAPI, taskAPI, nluAPI, authAPI, schedulerAPI, focusAPI, Event, Task } from './lib/api';
 import Settings from './components/Settings';
+import Calendar from './components/Calendar';
+import { useTranslation } from 'react-i18next';
 import './App.css';
 
 function App() {
+  const { t, i18n } = useTranslation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loginMode, setLoginMode] = useState<'login' | 'register'>('login');
-  const [view, setView] = useState<'home' | 'settings'>('home');
+  const [view, setView] = useState<'home' | 'calendar' | 'settings'>('home');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -46,6 +50,30 @@ function App() {
     },
   });
 
+  // Auto-schedule mutation
+  const autoScheduleMutation = useMutation({
+    mutationFn: schedulerAPI.autoSchedule,
+    onSuccess: (data) => {
+      alert(`Scheduled ${data.scheduled} tasks!`);
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+    onError: () => {
+      alert('Failed to auto-schedule tasks');
+    },
+  });
+
+  // Focus time mutation
+  const focusTimeMutation = useMutation({
+    mutationFn: focusAPI.protect,
+    onSuccess: (data) => {
+      alert(`Protected ${data.protected} focus time blocks!`);
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+    onError: () => {
+      alert('Failed to protect focus time');
+    },
+  });
+
   // Auth mutations
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,14 +82,16 @@ function App() {
         const data = await authAPI.login(email, password);
         localStorage.setItem('token', data.token);
         setIsAuthenticated(true);
+        setIsAdmin(data.user.isAdmin || false);
       } else {
         const data = await authAPI.register(email, name, password);
         localStorage.setItem('token', data.token);
         setIsAuthenticated(true);
+        setIsAdmin(data.user.isAdmin || false);
       }
     } catch (error) {
       console.error('Auth error:', error);
-      alert('Authentication failed');
+      alert(t('auth.failed', '인증 실패'));
     }
   };
 
@@ -141,15 +171,21 @@ function App() {
       <header className="app-header">
         <div className="container flex items-center justify-between">
           <div>
-            <h1 className="logo">Jacal</h1>
-            <p className="text-sm text-secondary">Intelligent Productivity Platform</p>
+            <h1 className="logo">{t('app.title', 'Jacal')}</h1>
+            <p className="text-sm text-secondary">{t('app.subtitle', '지능형 생산성 플랫폼')}</p>
           </div>
           <div className="flex gap-md items-center">
-            <button onClick={() => setView(view === 'home' ? 'settings' : 'home')} className="btn btn-secondary">
-              {view === 'home' ? '⚙️ Settings' : '🏠 Home'}
+            <button onClick={() => setView('home')} className={`btn ${view === 'home' ? 'btn-primary' : 'btn-secondary'}`}>
+              {t('nav.home', '🏠 홈')}
+            </button>
+            <button onClick={() => setView('calendar')} className={`btn ${view === 'calendar' ? 'btn-primary' : 'btn-secondary'}`}>
+              📅 {t('calendar.title', '캘린더')}
+            </button>
+            <button onClick={() => setView('settings')} className={`btn ${view === 'settings' ? 'btn-primary' : 'btn-secondary'}`}>
+              {t('nav.settings', '⚙️ 설정')}
             </button>
             <button onClick={handleLogout} className="btn btn-secondary">
-              Logout
+              {t('nav.logout', '로그아웃')}
             </button>
           </div>
         </div>
@@ -157,6 +193,8 @@ function App() {
 
       {view === 'settings' ? (
         <Settings />
+      ) : view === 'calendar' ? (
+        <Calendar isAdmin={isAdmin} />
       ) : (
       <main className="container">
         <section className="nlu-section">
@@ -180,6 +218,23 @@ function App() {
           {parseMutation.isError && (
             <p className="error-message">Failed to parse input. Please check your API key in backend .env</p>
           )}
+          
+          <div className="flex gap-md" style={{ marginTop: '1rem' }}>
+            <button 
+              onClick={() => autoScheduleMutation.mutate()} 
+              className="btn btn-secondary"
+              disabled={autoScheduleMutation.isPending}
+            >
+              {autoScheduleMutation.isPending ? 'Scheduling...' : '🤖 Auto-Schedule Tasks'}
+            </button>
+            <button 
+              onClick={() => focusTimeMutation.mutate()} 
+              className="btn btn-secondary"
+              disabled={focusTimeMutation.isPending}
+            >
+              {focusTimeMutation.isPending ? 'Protecting...' : '🎯 Protect Focus Time'}
+            </button>
+          </div>
         </section>
 
         <div className="content-grid">
