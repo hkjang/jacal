@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: jacal-postgres
+    environment:
+      POSTGRES_USER: jacal
+      POSTGRES_PASSWORD: jacal123
+      POSTGRES_DB: jacal
+    ports:
+      - "5432:5432"
+    volumes:
+      - jacal-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  jacal-postgres-data:
