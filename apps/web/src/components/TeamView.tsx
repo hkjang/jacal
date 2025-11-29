@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { teamAPI } from '../lib/teamApi';
-import { Team, SharedEvent } from '../types/team';
 
 export default function TeamView() {
   const { t } = useTranslation();
@@ -10,18 +9,10 @@ export default function TeamView() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
-  const [showCreateEventModal, setShowCreateEventModal] = useState(false);
 
   // Form states
   const [newTeam, setNewTeam] = useState({ name: '', description: '' });
   const [newMember, setNewMember] = useState({ email: '', role: 'MEMBER' });
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    description: '',
-    startAt: '',
-    endAt: '',
-    location: '',
-  });
 
   const { data: teams, isLoading: isLoadingTeams } = useQuery({
     queryKey: ['teams'],
@@ -50,16 +41,6 @@ export default function TeamView() {
       queryClient.invalidateQueries({ queryKey: ['teams'] });
       setShowAddMemberModal(false);
       setNewMember({ email: '', role: 'MEMBER' });
-    },
-  });
-
-  const createEventMutation = useMutation({
-    mutationFn: ({ teamId, data }: { teamId: string; data: any }) =>
-      teamAPI.createEvent(teamId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teamEvents', selectedTeamId] });
-      setShowCreateEventModal(false);
-      setNewEvent({ title: '', description: '', startAt: '', endAt: '', location: '' });
     },
   });
 
@@ -96,22 +77,6 @@ export default function TeamView() {
         {selectedTeam ? (
           <>
             <div className="team-header">
-              <div>
-                <h1>{selectedTeam.name}</h1>
-                <p>{selectedTeam.description}</p>
-              </div>
-              <div className="team-actions">
-                <button onClick={() => setShowAddMemberModal(true)} className="btn btn-secondary">
-                  {t('teams.addMember', '멤버 초대')}
-                </button>
-                <button onClick={() => setShowCreateEventModal(true)} className="btn btn-primary">
-                  {t('teams.createEvent', '일정 추가')}
-                </button>
-              </div>
-            </div>
-
-            <div className="team-members-section">
-              <h3>{t('teams.members', '멤버')}</h3>
               <div className="members-grid">
                 {selectedTeam.members.map((member) => (
                   <div key={member.id} className="member-card">

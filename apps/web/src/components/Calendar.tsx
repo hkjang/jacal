@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Event } from '../lib/api';
+import { Event, eventAPI } from '../lib/api';
+import { adminAPI } from '../lib/adminApi';
 import { useTranslation } from 'react-i18next';
-import axios from 'axios';
 import { getWeekDates, getMonthDates, filterEventsForDate } from '../lib/dateUtils';
 import { useCalendarNavigation } from '../hooks/useCalendarNavigation';
 import { useEventMutations } from '../hooks/useEventMutations';
@@ -30,21 +30,34 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
 
   const { createMutation, updateMutation, deleteMutation } = useEventMutations();
 
-  // Fetch events
-  const { data: events = [] } = useQuery<Event[]>({
+  // Fetch events using proper API client
+  const { data: eventsData = [] } = useQuery<Event[]>({
     queryKey: ['calendar-events', isAdmin],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const endpoint = isAdmin ? '/api/admin/events/all' : '/api/events';
-      const { data } = await axios.get(`http://localhost:3000${endpoint}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return data;
+      if (isAdmin) {
+        // For admin, fetch all events from all users with a large limit
+        const response = await adminAPI.getEvents({ limit: 1000 });
+        return response.data || [];
+      } else {
+        // For regular users, use eventAPI
+        return await eventAPI.getAll();
+      }
     },
   });
 
+  const events = Array.isArray(eventsData) ? eventsData : [];
+  
+  // Debug logging
+  console.log('📅 Calendar Debug - Events Data:', eventsData);
+  console.log('📅 Calendar Debug - Events Count:', events.length);
+  console.log('📅 Calendar Debug - View Mode:', viewMode);
+  console.log('📅 Calendar Debug - Selected Date:', selectedDate);
+
   const weekDates = viewMode === 'week' ? getWeekDates(selectedDate) : [];
   const monthDates = viewMode === 'month' ? getMonthDates(selectedDate) : [];
+  
+  console.log('📅 Calendar Debug - Week Dates:', weekDates);
+  console.log('📅 Calendar Debug - Month Dates Count:', monthDates.length);
 
   const handleDateClick = (date: Date) => {
     setSelectedDateForCreate(date);

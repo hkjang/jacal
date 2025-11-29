@@ -74,8 +74,8 @@ model Task {
 
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tags              Tag[]    @relation("TaskTags")
-  reminders         Reminder[]
   recurringRule     RecurringRule?
+  // reminders removed - use polymorphic entityType/entityId pattern in Reminder model
   
   @@map("tasks")
 }
@@ -95,8 +95,8 @@ model Event {
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tags            Tag[]    @relation("EventTags")
-  reminders       Reminder[]
   recurringRule   RecurringRule?
+  // reminders removed - use polymorphic entityType/entityId pattern in Reminder model
   
   @@map("events")
 }
@@ -123,8 +123,8 @@ model Reminder {
   sent        Boolean  @default(false)
   createdAt   DateTime @default(now())
 
-  task        Task?    @relation(fields: [entityId], references: [id], onDelete: Cascade, map: "reminders_task_fk")
-  event       Event?   @relation(fields: [entityId], references: [id], onDelete: Cascade, map: "reminders_event_fk")
+  // Note: task and event relations removed to support polymorphic association
+  // The entityId field can reference either tasks.id or events.id based on entityType
   
   @@map("reminders")
 }
@@ -302,4 +302,70 @@ model Comment {
   user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("comments")
+}
+
+// Admin-related models
+model AppSettings {
+  id                       String   @id @default(uuid())
+  siteName                 String   @default("Jacal")
+  siteUrl                  String   @default("http://localhost:5173")
+  defaultLanguage          String   @default("ko")
+  timezone                 String   @default("Asia/Seoul")
+  allowRegistration        Boolean  @default(true)
+  requireEmailVerification Boolean  @default(false)
+  maxUploadSizeMB          Int      @default(10)
+  updatedAt                DateTime @updatedAt
+
+  @@map("app_settings")
+}
+
+model Webhook {
+  id        String   @id @default(uuid())
+  name      String
+  url       String
+  events    String[]
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("webhooks")
+}
+
+model Integration {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  provider  String?
+  apiKey    String?
+  config    Json
+  active    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("integrations")
+}
+
+model EmailSettings {
+  id           String   @id @default(uuid())
+  smtpHost     String
+  smtpPort     Int
+  smtpUser     String
+  smtpPassword String
+  smtpSecure   Boolean  @default(false)
+  fromName     String
+  fromEmail    String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("email_settings")
+}
+
+model BackupRecord {
+  id        String   @id @default(uuid())
+  filename  String
+  size      BigInt
+  status    String   @default("success")
+  createdAt DateTime @default(now())
+
+  @@map("backup_records")
 }

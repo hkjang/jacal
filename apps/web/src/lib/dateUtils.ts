@@ -43,9 +43,35 @@ export const getMonthDates = (date: Date) => {
   return dates;
 };
 
-export const filterEventsForDate = (events: any[], date: Date) => {
-  return events.filter(event => {
+export const filterEventsForDate = (events: any[] | undefined, date: Date) => {
+  if (!Array.isArray(events)) {
+    console.log('🔍 filterEventsForDate - Events is not an array:', events);
+    return [];
+  }
+  
+  const filtered = events.filter(event => {
     const eventDate = new Date(event.startAt);
-    return eventDate.toDateString() === date.toDateString();
+    const eventDateStr = eventDate.toDateString();
+    const targetDateStr = date.toDateString();
+    const matches = eventDateStr === targetDateStr;
+    
+    if (matches) {
+      console.log('✅ Event matches date:', {
+        eventTitle: event.title,
+        eventStartAt: event.startAt,
+        eventDate: eventDateStr,
+        targetDate: targetDateStr
+      });
+    }
+    
+    return matches;
   });
+  
+  console.log(`🔍 filterEventsForDate for ${date.toDateString()}:`, {
+    totalEvents: events.length,
+    filteredEvents: filtered.length,
+    eventTitles: filtered.map(e => e.title)
+  });
+  
+  return filtered;
 };

@@ -1,0 +1,114 @@
+.admin-section {
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.section-description {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.role-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.role-card {
+  background: var(--bg-tertiary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  display: flex;
+  gap: 1rem;
+  border-left: 4px solid;
+}
+
+.role-card.admin-role {
+  border-color: var(--danger);
+}
+
+.role-card.user-role {
+  border-color: var(--success);
+}
+
+.role-icon {
+  font-size: 3rem;
+}
+
+.role-info h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.role-count {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+  color: var(--primary);
+}
+
+.role-desc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.permissions-section {
+  background: var(--bg-tertiary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.permissions-section h3 {
+  margin: 0 0 1rem 0;
+}
+
+.permissions-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.permissions-table th,
+.permissions-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.permissions-table th {
+  background: rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+}
+
+.permissions-table td:not(:first-child) {
+  text-align: center;
+}
+
+.check {
+  color: var(--success);
+  font-size: 1.2rem;
+}
+
+.cross {
+  color: var(--danger);
+  font-size: 1.2rem;
+}
+
+.note {
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 4px solid #3b82f6;
+  border-radius: 4px;
+}
+
+.note p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.loading {
+  padding: 2rem;
+  text-align: center;
+}

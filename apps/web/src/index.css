@@ -184,3 +184,28 @@ input:focus, textarea:focus {
 .gap-lg {
   gap: var(--spacing-lg);
 }
+
+/* Global Modal Styles - Ensures all modals appear on top */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000 !important;
+}
+
+.modal-content {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-xl);
+  z-index: 10001 !important;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}

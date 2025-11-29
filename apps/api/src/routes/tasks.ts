@@ -10,7 +10,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
     const userId = req.user!.userId;
     const tasks = await prisma.task.findMany({
       where: { userId },
-      include: { tags: true, reminders: true },
+      include: { tags: true },
       orderBy: { createdAt: 'desc' },
     });
     res.json(tasks);
@@ -34,15 +34,26 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         dueAt: dueAt ? new Date(dueAt) : null,
         estimatedMinutes,
         priority: priority || 0,
-        reminders: reminders ? {
-          create: reminders.map((r: any) => ({
-            notifyAt: new Date(r.notifyAt),
-            channel: r.channel || 'email',
-          })),
-        } : undefined,
       },
-      include: { reminders: true },
+      include: { tags: true },
     });
+
+    // Create reminders separately if provided
+    if (reminders && reminders.length > 0) {
+      await Promise.all(
+        reminders.map((r: any) =>
+          prisma.reminder.create({
+            data: {
+              entityType: 'task',
+              entityId: task.id,
+              notifyAt: new Date(r.notifyAt),
+              channel: r.channel || 'email',
+              sent: false,
+            },
+          })
+        )
+      );
+    }
 
     res.json(task);
   } catch (error) {
@@ -67,16 +78,34 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
         estimatedMinutes,
         priority,
         status,
-        reminders: reminders ? {
-          deleteMany: {}, // Clear existing
-          create: reminders.map((r: any) => ({
-            notifyAt: new Date(r.notifyAt),
-            channel: r.channel || 'email',
-          })),
-        } : undefined,
       },
-      include: { reminders: true },
+      include: { tags: true },
     });
+
+    // Update reminders separately if provided
+    if (reminders !== undefined) {
+      // Delete existing reminders for this task
+      await prisma.reminder.deleteMany({
+        where: { entityType: 'task', entityId: id },
+      });
+
+      // Create new reminders
+      if (reminders && reminders.length > 0) {
+        await Promise.all(
+          reminders.map((r: any) =>
+            prisma.reminder.create({
+              data: {
+                entityType: 'task',
+                entityId: task.id,
+                notifyAt: new Date(r.notifyAt),
+                channel: r.channel || 'email',
+                sent: false,
+              },
+            })
+          )
+        );
+      }
+    }
 
     res.json(task);
   } catch (error) {

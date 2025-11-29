@@ -11,10 +11,66 @@
     "password": "Password",
     "failed": "Authentication failed"
   },
+  "navbar": {
+    "search": "Search..."
+  },
   "nav": {
-    "home": "🏠 Home",
-    "settings": "⚙️ Settings",
+    "home": "Home",
+    "calendar": "Calendar",
+    "habits": "Habits",
+    "dashboard": "Dashboard",
+    "teams": "Teams",
+    "admin": "Admin",
+    "settings": "Settings",
     "logout": "Logout"
+  },
+  "admin": {
+    "panel": "Admin Panel",
+    "title": "Admin Panel",
+    "subtitle": "System & User Management",
+    "overview": "Overview",
+    "dashboard": "Dashboard",
+    "stats": "System Stats",
+    "userManagement": "User Management",
+    "usersList": "User List",
+    "roles": "Roles & Permissions",
+    "activity": "Activity Log",
+    "contentManagement": "Content Management",
+    "habits": "Habits",
+    "teams": "Teams",
+    "tasks": "Tasks",
+    "events": "Events",
+    "analytics": "Analytics",
+    "usage": "Usage Reports",
+    "performance": "Performance Metrics",
+    "adoption": "Feature Adoption",
+    "system": "System",
+    "health": "Health Monitor",
+    "database": "Database",
+    "backups": "Backups",
+    "logs": "Server Logs",
+    "configuration": "Configuration",
+    "general": "General Settings",
+    "integrations": "Integrations",
+    "webhooks": "Webhooks",
+    "email": "Email Settings",
+    "userUpdated": "User updated successfully",
+    "updateFailed": "Update failed: ",
+    "userDeleted": "User deleted successfully",
+    "deleteFailed": "Delete failed: "
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "create": "Create",
+    "edit": "Edit",
+    "close": "Close",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "deleting": "Deleting...",
+    "success": "Success!",
+    "error": "Error occurred"
   },
   "nlu": {
     "title": "Natural Language Input",
@@ -40,41 +96,101 @@
     "empty": "No events yet. Try adding one using natural language!",
     "location": "📍 {{location}}"
   },
+  "event": {
+    "create": "New Event",
+    "edit": "Edit Event",
+    "title": "Title",
+    "description": "Description",
+    "start": "Start Time",
+    "end": "End Time",
+    "location": "Location",
+    "delete": "Delete"
+  },
   "tasks": {
     "title": "Tasks",
     "empty": "No tasks yet. Try adding one using natural language!",
     "due": "⏰ Due: {{date}}",
     "est": "⏱️ Est: {{minutes}} minutes"
   },
-  "settings": {
-    "title": "Settings",
-    "tabs": {
-      "general": "General",
-      "webhooks": "Webhooks",
-      "integrations": "Integrations"
-    },
-    "webhooks": {
-      "enable": "Enable Webhooks",
-      "url": "Webhook URL",
-      "secret": "Webhook Secret",
-      "test": "Test Webhook",
-      "testing": "Testing...",
-      "success": "Webhook test successful!",
-      "error": "Webhook test failed"
-    },
-    "integrations": {
-      "googleCalendar": "Google Calendar",
-      "connect": "Connect",
-      "sync": "Sync Now",
-      "syncing": "Syncing...",
-      "syncSuccess": "Calendar sync successful!",
-      "syncError": "Calendar sync failed"
-    }
-  },
   "calendar": {
     "title": "Calendar",
     "today": "Today",
     "week": "Week",
-    "month": "Month"
+    "month": "Month",
+    "newEvent": "New Event",
+    "editEvent": "Edit Event",
+    "confirmDelete": "Are you sure you want to delete this event?",
+    "startTime": "Start Time",
+    "endTime": "End Time"
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "general": "General",
+      "ollama": "AI Settings",
+      "webhook": "Webhooks",
+      "integrations": "Integrations"
+    },
+    "ollama": {
+      "title": "Ollama Settings",
+      "description": "Use local Ollama instance for natural language processing",
+      "enable": "Enable Ollama (Use local LLM instead of OpenAI)",
+      "baseUrl": "Ollama Base URL",
+      "baseUrlHelp": "OpenAI-compatible API endpoint of your Ollama instance",
+      "model": "Model Name",
+      "modelHelp": "Model name to use (e.g., gpt-oss:20b, llama2, mistral)",
+      "saveSettings": "Save Settings",
+      "saving": "Saving..."
+    },
+    "webhook": {
+      "title": "Webhook Integration",
+      "description": "Send data to external systems when events are created",
+      "enable": "Enable Webhooks",
+      "url": "Webhook URL",
+      "urlHelp": "URL to send POST requests to when events are created",
+      "columnMapping": "Column Mapping",
+      "columnMappingHelp": "Map event fields to custom field names for the webhook",
+      "selectSourceField": "Select Source Field",
+      "targetField": "Target Field (e.g., event_name)",
+      "addMapping": "Add Mapping",
+      "mappingHelp": "Select a source field and map it to a custom target field name",
+      "saveConfig": "Save Webhook Config",
+      "test": "Test Webhook",
+      "testing": "Testing...",
+      "testSuccess": "Test webhook sent successfully!",
+      "testError": "Webhook send failed. Check URL and try again.",
+      "saveSuccess": "Webhook config saved!",
+      "saveError": "Failed to save webhook config"
+    },
+    "integrations": {
+      "title": "Integrations",
+      "description": "Connect external services to sync data",
+      "googleCalendar": "Google Calendar",
+      "googleCalendarDesc": "Sync events from Google Calendar",
+      "connect": "Connect",
+      "sync": "Sync Now",
+      "syncing": "Syncing...",
+      "syncSuccess": "Calendar sync successful!",
+      "syncError": "Calendar sync failed",
+      "connectSuccess": "Google Calendar connected successfully!",
+      "connectError": "Failed to connect Google Calendar"
+    }
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "global": "Global",
+    "calendar": "Calendar",
+    "modals": "Modals",
+    "goHome": "Go to Home",
+    "goCalendar": "Go to Calendar",
+    "goSettings": "Go to Settings",
+    "focusInput": "Focus Input",
+    "showHelp": "Show Help",
+    "today": "Go to Today",
+    "weekView": "Week View",
+    "monthView": "Month View",
+    "navigate": "Previous/Next Period",
+    "closeModal": "Close Modal",
+    "submit": "Submit Form"
   }
 }

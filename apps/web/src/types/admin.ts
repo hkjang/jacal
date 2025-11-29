@@ -10,6 +10,14 @@ export interface User {
     events: number;
     tasks: number;
   };
+  settings?: {
+    pop3Enabled: boolean;
+    pop3Host?: string;
+    pop3Port?: number;
+    pop3User?: string;
+    pop3Password?: string;
+    pop3Tls?: boolean;
+  };
 }
 
 export interface Stats {

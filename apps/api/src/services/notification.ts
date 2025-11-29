@@ -77,10 +77,6 @@ export class NotificationService {
             lte: now,
           },
         },
-        include: {
-          task: { include: { user: true } },
-          event: { include: { user: true } },
-        },
       });
 
       console.log(`Found ${reminders.length} due reminders`);
@@ -90,14 +86,29 @@ export class NotificationService {
         let title;
         let type;
 
-        if (reminder.task) {
-          user = reminder.task.user;
-          title = reminder.task.title;
-          type = 'Task';
-        } else if (reminder.event) {
-          user = reminder.event.user;
-          title = reminder.event.title;
-          type = 'Event';
+        // Manually fetch task or event based on entityType
+        if (reminder.entityType === 'task') {
+          const task = await prisma.task.findUnique({
+            where: { id: reminder.entityId },
+            include: { user: true },
+          });
+          
+          if (task) {
+            user = task.user;
+            title = task.title;
+            type = 'Task';
+          }
+        } else if (reminder.entityType === 'event') {
+          const event = await prisma.event.findUnique({
+            where: { id: reminder.entityId },
+            include: { user: true },
+          });
+          
+          if (event) {
+            user = event.user;
+            title = event.title;
+            type = 'Event';
+          }
         }
 
         if (user && user.email) {

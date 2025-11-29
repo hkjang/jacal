@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { Team, TeamMember, SharedEvent, Comment } from '../types/team';
+import { API_URL } from '../config';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseURL: API_URL,
   withCredentials: true,
 });
 

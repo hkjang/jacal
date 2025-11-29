@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsAPI, calendarAPI, UserSettings, WebhookConfig } from '../lib/api';
 import './Settings.css';
+import './PageLayouts.css';
 import { useTranslation } from 'react-i18next';
 import SettingsOllama from './settings/SettingsOllama';
 import SettingsEmail from './settings/SettingsEmail';
@@ -30,7 +31,7 @@ export default function Settings() {
     mutationFn: (data: Partial<UserSettings>) => settingsAPI.updateSettings(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
-      alert('Settings saved successfully!');
+      alert(t('common.success', '설정이 저장되었습니다!'));
     },
   });
 
@@ -38,39 +39,39 @@ export default function Settings() {
     mutationFn: (data: Partial<WebhookConfig>) => settingsAPI.updateWebhookConfig(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhookConfig'] });
-      alert('Webhook config saved successfully!');
+      alert(t('settings.webhook.saveSuccess', '웹훅 설정이 저장되었습니다!'));
     },
   });
 
   const testWebhookMutation = useMutation({
     mutationFn: settingsAPI.testWebhook,
     onSuccess: () => {
-      alert('Test webhook sent successfully!');
+      alert(t('settings.webhook.testSuccess', '테스트 웹훅이 성공적으로 전송되었습니다!'));
     },
     onError: () => {
-      alert('Failed to send test webhook. Check your URL and try again.');
+      alert(t('settings.webhook.testError', '웹훅 전송 실패. URL을 확인하고 다시 시도하세요.'));
     },
   });
 
   const testEmailMutation = useMutation({
     mutationFn: settingsAPI.testEmailConnection,
     onSuccess: () => {
-      alert('Email connection successful!');
+      alert(t('settings.email.testSuccess', '이메일 연결 성공!'));
     },
     onError: (error: any) => {
-      alert(`Connection failed: ${error.response?.data?.error || error.message}`);
+      alert(t('settings.email.testError', '연결 실패: ') + (error.response?.data?.error || error.message));
     },
   });
 
   const syncEmailMutation = useMutation({
     mutationFn: settingsAPI.syncEmail,
     onSuccess: () => {
-      alert('Email sync triggered successfully!');
+      alert(t('settings.email.syncSuccess', '이메일 동기화가 시작되었습니다!'));
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
     onError: (error: any) => {
-      alert(`Sync failed: ${error.response?.data?.error || error.message}`);
+      alert(t('settings.email.syncError', '동기화 실패: ') + (error.response?.data?.error || error.message));
     },
   });
 
@@ -80,18 +81,18 @@ export default function Settings() {
       window.location.href = url;
     } catch (error) {
       console.error('Failed to get auth url', error);
-      alert('Failed to start Google connection');
+      alert(t('settings.integrations.connectError', '구글 캘린더 연결 실패'));
     }
   };
 
   const handleSyncCalendar = useMutation({
     mutationFn: calendarAPI.sync,
     onSuccess: () => {
-      alert('Calendar synced successfully!');
+      alert(t('settings.integrations.syncSuccess', '캘린더가 성공적으로 동기화되었습니다!'));
       queryClient.invalidateQueries({ queryKey: ['events'] });
     },
     onError: () => {
-      alert('Failed to sync calendar');
+      alert(t('settings.integrations.syncError', '캘린더 동기화 실패'));
     },
   });
 
@@ -100,13 +101,13 @@ export default function Settings() {
     const params = new URLSearchParams(window.location.search);
     const status = params.get('status');
     if (status === 'success') {
-      alert('Google Calendar connected successfully!');
+      alert(t('settings.integrations.connectSuccess', '구글 캘린더가 성공적으로 연결되었습니다!'));
       window.history.replaceState({}, '', window.location.pathname);
     } else if (status === 'error') {
-      alert('Failed to connect Google Calendar');
+      alert(t('settings.integrations.connectError', '구글 캘린더 연결 실패'));
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, []);
+  }, [t]);
 
   return (
     <div className="settings-container">

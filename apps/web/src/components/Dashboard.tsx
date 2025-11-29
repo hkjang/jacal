@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsAPI } from '../lib/api';
+import './PageLayouts.css';
 import {
   LineChart,
   Line,

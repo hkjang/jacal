@@ -21,8 +21,8 @@ export function useAuth() {
       // Optionally fetch user details to set isAdmin if needed, 
       // but for now we rely on the initial login/register response or just token presence
       // In a real app, we might want to validate the token or fetch /auth/me
-      authAPI.me().then(user => {
-        setIsAdmin(user.isAdmin || false);
+      authAPI.me().then(response => {
+        setIsAdmin(response.user.isAdmin || false);
       }).catch(() => {
         // Token might be invalid
         // localStorage.removeItem('token');

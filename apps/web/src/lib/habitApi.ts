@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { Habit, HabitLog, HabitStats } from '../types/habit';
+import { API_URL } from '../config';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseURL: API_URL,
   withCredentials: true,
 });
 
