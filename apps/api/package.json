@@ -9,6 +9,7 @@
     "dev": "nodemon src/index.ts",
     "seed": "npx tsx scripts/seed.ts",
     "create-admin": "npx tsx scripts/create-admin.ts",
+    "db:seed": "npx tsx scripts/seed.ts",
     "db:start": "cd ../.. && docker-compose up -d",
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
