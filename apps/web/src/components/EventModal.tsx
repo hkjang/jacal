@@ -11,6 +11,16 @@ interface EventModalProps {
   initialDate?: Date;
 }
 
+// Helper function to format date for datetime-local input (preserves local timezone)
+const formatDateForInput = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: EventModalProps) => {
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
@@ -26,19 +36,20 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
       setFormData({
         title: event.title,
         description: event.description || '',
-        startAt: new Date(event.startAt).toISOString().slice(0, 16),
-        endAt: new Date(event.endAt).toISOString().slice(0, 16),
+        startAt: formatDateForInput(new Date(event.startAt)),
+        endAt: formatDateForInput(new Date(event.endAt)),
         location: event.location || '',
       });
     } else if (initialDate) {
       const start = new Date(initialDate);
+      start.setHours(9, 0, 0, 0); // Set to 9 AM local time
       const end = new Date(start);
-      end.setHours(start.getHours() + 1);
+      end.setHours(10, 0, 0, 0); // Set to 10 AM local time
       setFormData({
         title: '',
         description: '',
-        startAt: start.toISOString().slice(0, 16),
-        endAt: end.toISOString().slice(0, 16),
+        startAt: formatDateForInput(start),
+        endAt: formatDateForInput(end),
         location: '',
       });
     }

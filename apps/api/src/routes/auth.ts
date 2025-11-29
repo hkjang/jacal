@@ -127,8 +127,9 @@ router.post('/register', async (req: Request, res: Response) => {
     });
 
     // Generate token
+    // Generate token
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, isAdmin: user.isAdmin },
       process.env.JWT_SECRET || 'default-secret',
       { expiresIn: '7d' }
     );
@@ -163,8 +164,9 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     // Generate token
+    // Generate token
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, isAdmin: user.isAdmin },
       process.env.JWT_SECRET || 'default-secret',
       { expiresIn: '7d' }
     );

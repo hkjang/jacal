@@ -74,8 +74,22 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
     const { id } = req.params;
     const { title, description, startAt, endAt, location, reminders } = req.body;
 
+    // Check if event exists and belongs to user (or user is admin)
+    const where: any = { id };
+    if (!req.user!.isAdmin) {
+      where.userId = userId;
+    }
+
+    const existingEvent = await prisma.event.findFirst({
+      where,
+    });
+
+    if (!existingEvent) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
     const event = await prisma.event.update({
-      where: { id, userId },
+      where: { id },
       data: {
         title,
         description,
@@ -127,8 +141,22 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
     const userId = req.user!.userId;
     const { id } = req.params;
 
+    // Check if event exists and belongs to user (or user is admin)
+    const where: any = { id };
+    if (!req.user!.isAdmin) {
+      where.userId = userId;
+    }
+
+    const existingEvent = await prisma.event.findFirst({
+      where,
+    });
+
+    if (!existingEvent) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
     await prisma.event.delete({
-      where: { id, userId },
+      where: { id },
     });
 
     res.json({ message: 'Event deleted' });
