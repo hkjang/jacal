@@ -334,6 +334,7 @@ model Webhook {
 model Integration {
   id        String   @id @default(uuid())
   name      String   @unique
+  type      String?
   provider  String?
   apiKey    String?
   config    Json
