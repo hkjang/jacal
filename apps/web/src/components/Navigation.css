@@ -71,7 +71,7 @@
 
 .navbar-btn {
   padding: 0.5rem 1rem;
-  border: none;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-bg);
   cursor: pointer;
@@ -92,7 +92,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  border: none;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-bg);
   cursor: pointer;

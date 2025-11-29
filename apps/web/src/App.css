@@ -52,7 +52,7 @@
 .auth-tab {
   flex: 1;
   padding: var(--spacing-md);
-  background: none;
+  background: var(--color-bg);
   color: var(--color-text-secondary);
   border-bottom: 2px solid transparent;
   font-weight: 500;
@@ -60,6 +60,7 @@
 }
 
 .auth-tab.active {
+  background: white;
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
 }

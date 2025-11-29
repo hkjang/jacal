@@ -135,7 +135,7 @@
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: var(--color-primary);
   color: white;
 }
 
