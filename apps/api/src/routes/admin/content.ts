@@ -115,6 +115,59 @@ router.get('/habits/all', authMiddleware, adminMiddleware, async (req: Request, 
   }
 });
 
+// Update habit (admin only)
+router.put('/habits/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, description, frequency, targetDays, color, icon } = req.body;
+
+    const habit = await prisma.habit.update({
+      where: { id },
+      data: {
+        title,
+        description,
+        frequency,
+        targetDays,
+        color,
+        icon,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: { logs: true },
+        },
+      },
+    });
+
+    res.json(habit);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update habit' });
+  }
+});
+
+// Delete habit (admin only)
+router.delete('/habits/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.habit.delete({
+      where: { id },
+    });
+
+    res.json({ success: true, message: 'Habit deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete habit' });
+  }
+});
+
 // Get all teams (admin only)
 router.get('/teams/all', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {

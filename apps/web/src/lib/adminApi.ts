@@ -71,6 +71,16 @@ export const adminAPI = {
     return res.data;
   },
 
+  updateHabit: async (id: string, data: any): Promise<any> => {
+    const res = await api.put(`/api/admin/habits/${id}`, data);
+    return res.data;
+  },
+
+  deleteHabit: async (id: string): Promise<any> => {
+    const res = await api.delete(`/api/admin/habits/${id}`);
+    return res.data;
+  },
+
   getTeams: async (params?: { page?: number; limit?: number; search?: string }): Promise<PaginatedResponse<any>> => {
     const res = await api.get('/api/admin/teams/all', { params });
     return res.data;
