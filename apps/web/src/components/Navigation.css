@@ -73,14 +73,20 @@
   padding: 0.5rem 1rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-bg);
+  background: white;
   cursor: pointer;
   font-size: 0.875rem;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+  font-weight: 500;
 }
 
 .navbar-btn:hover {
-  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .navbar-user-menu {
@@ -94,13 +100,18 @@
   padding: 0.5rem 1rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-bg);
+  background: white;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+  font-weight: 500;
 }
 
 .navbar-user-btn:hover {
-  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .navbar-user-avatar {
@@ -139,11 +150,17 @@
   text-align: left;
   cursor: pointer;
   font-size: 0.875rem;
-  transition: background 0.2s;
+  font-weight: 500;
+  color: var(--color-text);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .navbar-dropdown-item:hover {
-  background: var(--color-bg);
+  background: var(--color-surface-hover);
+  color: var(--color-primary);
 }
 
 /* Sidebar */

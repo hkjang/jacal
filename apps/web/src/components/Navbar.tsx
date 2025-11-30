@@ -161,6 +161,15 @@ export default function Navbar({ userEmail, onLogout, onLanguageToggle, currentL
             {showUserMenu && (
               <div className="navbar-dropdown">
                 <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    onViewChange('settings');
+                  }}
+                  className="navbar-dropdown-item"
+                >
+                  ⚙️ {t('nav.settings', '설정')}
+                </button>
+                <button
                   onClick={onLogout}
                   className="navbar-dropdown-item"
                 >
