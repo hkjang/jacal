@@ -50,14 +50,57 @@ export const adminAPI = {
   },
 
   updateUserSettings: async (userId: string, settings: {
+    ollamaEnabled?: boolean;
+    ollamaBaseUrl?: string;
+    ollamaModel?: string;
     pop3Enabled?: boolean;
     pop3Host?: string;
     pop3Port?: number;
     pop3User?: string;
     pop3Password?: string;
     pop3Tls?: boolean;
+    savedLocations?: any;
   }): Promise<any> => {
     const res = await api.put(`/api/admin/users/${userId}/settings`, settings);
+    return res.data;
+  },
+
+  getUserSettings: async (userId: string): Promise<any> => {
+    const res = await api.get(`/api/admin/users/${userId}/settings`);
+    return res.data;
+  },
+
+  deleteUserSettings: async (userId: string): Promise<any> => {
+    const res = await api.delete(`/api/admin/users/${userId}/settings`);
+    return res.data;
+  },
+
+  getUserWebhook: async (userId: string): Promise<any> => {
+    const res = await api.get(`/api/admin/users/${userId}/webhook`);
+    return res.data;
+  },
+
+  updateUserWebhook: async (userId: string, webhook: {
+    enabled?: boolean;
+    url?: string;
+    columnMapping?: any;
+  }): Promise<any> => {
+    const res = await api.put(`/api/admin/users/${userId}/webhook`, webhook);
+    return res.data;
+  },
+
+  deleteUserWebhook: async (userId: string): Promise<any> => {
+    const res = await api.delete(`/api/admin/users/${userId}/webhook`);
+    return res.data;
+  },
+
+  getUserIntegrations: async (userId: string): Promise<any[]> => {
+    const res = await api.get(`/api/admin/users/${userId}/integrations`);
+    return res.data;
+  },
+
+  deleteUserIntegration: async (userId: string, integrationId: string): Promise<any> => {
+    const res = await api.delete(`/api/admin/users/${userId}/integrations/${integrationId}`);
     return res.data;
   },
 

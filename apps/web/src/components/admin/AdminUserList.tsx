@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { UseMutationResult } from '@tanstack/react-query';
 import { User } from '../../types/admin';
 import { PaginatedResponse } from '../../lib/adminApi';
-import UserPOP3SettingsModal from './UserPOP3SettingsModal';
+import UserSettingsModal from './UserSettingsModal';
 import './AdminUserList.css';
 
 interface AdminUserListProps {
@@ -28,7 +28,7 @@ export default function AdminUserList({
   onCreateUser
 }: AdminUserListProps) {
   const { t } = useTranslation();
-  const [pop3ModalUser, setPop3ModalUser] = useState<User | null>(null);
+  const [settingsModalUser, setSettingsModalUser] = useState<User | null>(null);
 
   return (
     <div className="users-section">
@@ -56,7 +56,7 @@ export default function AdminUserList({
             <th>{t('admin.role', '역할')}</th>
             <th>{t('admin.events', '이벤트')}</th>
             <th>{t('admin.tasks', '작업')}</th>
-            <th>POP3</th>
+            <th>{t('admin.settings', '설정')}</th>
             <th>{t('admin.actions', '작업')}</th>
           </tr>
         </thead>
@@ -73,19 +73,35 @@ export default function AdminUserList({
               <td>{user._count?.events || 0}</td>
               <td>{user._count?.tasks || 0}</td>
               <td>
-                <span className={`status-badge ${user.settings?.pop3Enabled ? 'success' : 'neutral'}`}>
-                  {user.settings?.pop3Enabled ? 'ON' : 'OFF'}
-                </span>
-                {user.settings?.pop3Enabled && user.settings?.pop3Host && (
-                  <div className="text-xs text-muted">{user.settings.pop3Host}</div>
-                )}
-                <button
-                  onClick={() => setPop3ModalUser(user)}
-                  className="btn btn-xs btn-link"
-                  title={t('admin.viewPOP3Settings', 'POP3 설정 보기')}
-                >
-                  {t('admin.configure', '설정')}
-                </button>
+                <div className="settings-summary">
+                  {user.settings?.ollamaEnabled && (
+                    <span className="settings-badge ai" title={t('admin.aiEnabled', 'AI 활성화됨')}>
+                      AI
+                    </span>
+                  )}
+                  {user.settings?.pop3Enabled && (
+                    <span className="settings-badge email" title={t('admin.emailEnabled', '이메일 활성화됨')}>
+                      📧
+                    </span>
+                  )}
+                  {user.webhookConfig?.enabled && (
+                    <span className="settings-badge webhook" title={t('admin.webhookEnabled', '웹훅 활성화됨')}>
+                      🔗
+                    </span>
+                  )}
+                  {user._count?.connectedAccounts > 0 && (
+                    <span className="settings-badge integration" title={t('admin.integrations', '연동')}>
+                      {user._count.connectedAccounts}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setSettingsModalUser(user)}
+                    className="btn btn-xs btn-link"
+                    title={t('admin.viewSettings', '설정 보기')}
+                  >
+                    {t('admin.configure', '설정')}
+                  </button>
+                </div>
               </td>
               <td>
                 <button
@@ -140,10 +156,10 @@ export default function AdminUserList({
         </div>
       )}
 
-      {pop3ModalUser && (
-        <UserPOP3SettingsModal
-          user={pop3ModalUser}
-          onClose={() => setPop3ModalUser(null)}
+      {settingsModalUser && (
+        <UserSettingsModal
+          user={settingsModalUser}
+          onClose={() => setSettingsModalUser(null)}
         />
       )}
     </div>
