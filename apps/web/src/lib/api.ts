@@ -222,3 +222,11 @@ export const analyticsAPI = {
     return data;
   },
 };
+
+// Search API
+export const searchAPI = {
+  search: async (query: string): Promise<{ tasks: Task[]; events: Event[]; habits: any[] }> => {
+    const { data } = await api.get(`/search?q=${encodeURIComponent(query)}`);
+    return data;
+  },
+};

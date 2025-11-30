@@ -76,6 +76,7 @@ export default function MainLayout({
         onLogout={onLogout}
         onLanguageToggle={() => i18n.changeLanguage(i18n.language === 'ko' ? 'en' : 'ko')}
         currentLanguage={i18n.language}
+        onViewChange={onViewChange}
       />
       <div className="app-layout">
         {currentView !== 'admin' && (

@@ -13,6 +13,7 @@ import analyticsRoutes from './routes/analytics';
 import adminRoutes from './routes/admin';
 import habitRoutes from './routes/habits';
 import teamRoutes from './routes/teams';
+import searchRoutes from './routes/search';
 import cron from 'node-cron';
 import { notificationService } from './services/notification';
 import { autoRegisterService } from './services/auto-register';
@@ -44,6 +45,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/habits', habitRoutes);
 app.use('/api/teams', teamRoutes);
+app.use('/api/search', searchRoutes);
 
 // Error handling
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
