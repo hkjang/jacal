@@ -63,6 +63,56 @@ router.get('/events/all', authMiddleware, adminMiddleware, async (req: Request, 
   }
 });
 
+// Update event (admin only)
+router.put('/events/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, description, startAt, endAt, location, eventType } = req.body;
+
+    const event = await prisma.event.update({
+      where: { id },
+      data: {
+        title,
+        description,
+        startAt: startAt ? new Date(startAt) : undefined,
+        endAt: endAt ? new Date(endAt) : undefined,
+        location,
+        eventType,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    res.json(event);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update event' });
+  }
+});
+
+// Delete event (admin only)
+router.delete('/events/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.event.delete({
+      where: { id },
+    });
+
+    res.json({ success: true, message: 'Event deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete event' });
+  }
+});
+
 // Get all habits from all users (admin only)
 router.get('/habits/all', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
@@ -268,6 +318,56 @@ router.get('/tasks/all', authMiddleware, adminMiddleware, async (req: Request, r
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch all tasks' });
+  }
+});
+
+// Update task (admin only)
+router.put('/tasks/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, description, status, priority, dueAt, estimatedMinutes } = req.body;
+
+    const task = await prisma.task.update({
+      where: { id },
+      data: {
+        title,
+        description,
+        status,
+        priority,
+        dueAt: dueAt ? new Date(dueAt) : undefined,
+        estimatedMinutes,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    res.json(task);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update task' });
+  }
+});
+
+// Delete task (admin only)
+router.delete('/tasks/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.task.delete({
+      where: { id },
+    });
+
+    res.json({ success: true, message: 'Task deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete task' });
   }
 });
 

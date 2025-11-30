@@ -91,8 +91,28 @@ export const adminAPI = {
     return res.data;
   },
 
+  updateTask: async (id: string, data: any): Promise<any> => {
+    const res = await api.put(`/api/admin/tasks/${id}`, data);
+    return res.data;
+  },
+
+  deleteTask: async (id: string): Promise<any> => {
+    const res = await api.delete(`/api/admin/tasks/${id}`);
+    return res.data;
+  },
+
   getEvents: async (params?: { page?: number; limit?: number; search?: string }): Promise<PaginatedResponse<any>> => {
     const res = await api.get('/api/admin/events/all', { params });
+    return res.data;
+  },
+
+  updateEvent: async (id: string, data: any): Promise<any> => {
+    const res = await api.put(`/api/admin/events/${id}`, data);
+    return res.data;
+  },
+
+  deleteEvent: async (id: string): Promise<any> => {
+    const res = await api.delete(`/api/admin/events/${id}`);
     return res.data;
   },
 
