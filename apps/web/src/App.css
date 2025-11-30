@@ -92,14 +92,14 @@
 .app-layout {
   display: flex;
   flex: 1;
-  overflow: hidden;
+  /* overflow: hidden; removed to allow sticky sidebar to work properly */
 }
 
 .app-content {
   flex: 1;
   overflow-y: auto;
-  padding: var(--spacing-xl);
   background: var(--bg-primary);
+  /* padding removed to let children control their own spacing */
 }
 
 .app {

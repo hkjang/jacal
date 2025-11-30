@@ -330,15 +330,18 @@ export default function HabitTracker() {
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 1000;
+          z-index: 10000;
         }
 
         .modal-content {
-          background: var(--bg-primary);
+          background: var(--color-surface, white);
           padding: 2rem;
           border-radius: 12px;
           max-width: 500px;
           width: 90%;
+          box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+          position: relative;
+          z-index: 10001;
         }
 
         .modal-actions {

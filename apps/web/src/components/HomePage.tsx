@@ -24,7 +24,7 @@ export default function HomePage() {
   });
 
   return (
-    <main className="app-content">
+    <main className="app-content" style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
       <section className="nlu-section">
         <h2 className="section-title">{t('nlu.title', '자연어 입력')}</h2>
         <form onSubmit={handleNaturalInput} className="nlu-form">

@@ -205,7 +205,7 @@ export default function TeamView() {
       <style>{`
         .team-view {
           display: flex;
-          height: calc(100vh - 64px);
+          height: 100%;
           background: var(--bg-primary);
         }
 
@@ -339,6 +339,62 @@ export default function TeamView() {
           justify-content: center;
           height: 100%;
           color: var(--text-secondary);
+        }
+
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10000;
+        }
+
+        .modal-content {
+          background: var(--color-surface, white);
+          padding: 2rem;
+          border-radius: 12px;
+          max-width: 500px;
+          width: 90%;
+          box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+          position: relative;
+          z-index: 10001;
+        }
+
+        .modal-actions {
+          display: flex;
+          gap: 1rem;
+          margin-top: 1.5rem;
+        }
+
+        .form-group {
+          margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 500;
+          color: var(--color-text);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+          width: 100%;
+          padding: 0.75rem;
+          border: 1px solid var(--color-border);
+          border-radius: 8px;
+          font-size: 1rem;
+        }
+
+        .form-group textarea {
+          min-height: 100px;
+          resize: vertical;
         }
       `}</style>
     </div>

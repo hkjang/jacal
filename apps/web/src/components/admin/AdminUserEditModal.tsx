@@ -80,15 +80,48 @@ export default function AdminUserEditModal({
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 10000;
           }
 
           .modal-content {
-            background: var(--bg-primary);
+            background: var(--color-surface, white);
             padding: 2rem;
             border-radius: 12px;
             max-width: 500px;
             width: 90%;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+            position: relative;
+            z-index: 10001;
+          }
+
+          .form-group {
+            margin-bottom: 1.5rem;
+          }
+
+          .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--color-text);
+          }
+
+          .form-group input,
+          .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: var(--color-surface, white);
+            color: var(--color-text);
+            transition: all 0.2s ease;
+          }
+
+          .form-group input:focus,
+          .form-group select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px hsla(220, 90%, 56%, 0.1);
           }
 
           .modal-actions {
