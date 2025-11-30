@@ -8,10 +8,11 @@ import SettingsOllama from './settings/SettingsOllama';
 import SettingsEmail from './settings/SettingsEmail';
 import SettingsWebhook from './settings/SettingsWebhook';
 import SettingsIntegrations from './settings/SettingsIntegrations';
+import SettingsLocations from './settings/SettingsLocations';
 
 export default function Settings() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'ollama' | 'webhook' | 'integrations' | 'email'>('ollama');
+  const [activeTab, setActiveTab] = useState<'ollama' | 'webhook' | 'integrations' | 'email' | 'locations'>('ollama');
   const queryClient = useQueryClient();
 
   // Fetch user settings
@@ -138,6 +139,12 @@ export default function Settings() {
         >
           {t('settings.tabs.integrations', '📅 연동')}
         </button>
+        <button
+          className={`settings-tab ${activeTab === 'locations' ? 'active' : ''}`}
+          onClick={() => setActiveTab('locations')}
+        >
+          {t('settings.tabs.locations', '📍 위치')}
+        </button>
       </div>
 
       <div className="settings-content">
@@ -172,6 +179,14 @@ export default function Settings() {
           <SettingsIntegrations
             handleConnectGoogle={handleConnectGoogle}
             handleSyncCalendar={handleSyncCalendar}
+          />
+        )}
+
+        {activeTab === 'locations' && (
+          <SettingsLocations
+            settings={settings}
+            onSave={(data) => updateSettingsMutation.mutate(data)}
+            isSaving={updateSettingsMutation.isPending}
           />
         )}
       </div>

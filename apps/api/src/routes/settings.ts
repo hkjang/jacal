@@ -33,7 +33,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 router.put('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const { ollamaEnabled, ollamaBaseUrl, ollamaModel } = req.body;
+    const { ollamaEnabled, ollamaBaseUrl, ollamaModel, savedLocations } = req.body;
 
     const settings = await prisma.userSettings.upsert({
       where: { userId },
@@ -48,6 +48,7 @@ router.put('/', authMiddleware, async (req: Request, res: Response) => {
         pop3User: req.body.pop3User,
         pop3Password: req.body.pop3Password,
         pop3Tls: req.body.pop3Tls,
+        savedLocations: savedLocations || [],
       },
       update: {
         ollamaEnabled,
@@ -59,6 +60,7 @@ router.put('/', authMiddleware, async (req: Request, res: Response) => {
         pop3User: req.body.pop3User,
         pop3Password: req.body.pop3Password,
         pop3Tls: req.body.pop3Tls,
+        ...(savedLocations !== undefined && { savedLocations }),
       },
     });
 

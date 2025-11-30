@@ -25,7 +25,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const { title, description, startAt, endAt, location, reminders } = req.body;
+    const { title, description, startAt, endAt, location, reminders, eventType } = req.body;
 
     const event = await prisma.event.create({
       data: {
@@ -35,6 +35,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         startAt: new Date(startAt),
         endAt: new Date(endAt),
         location,
+        ...(eventType && { eventType }),
         sourceCalendar: 'manual',
       },
       include: { tags: true },
@@ -72,7 +73,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
-    const { title, description, startAt, endAt, location, reminders } = req.body;
+    const { title, description, startAt, endAt, location, reminders, eventType } = req.body;
 
     // Check if event exists and belongs to user (or user is admin)
     const where: any = { id };
@@ -96,6 +97,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
         startAt: startAt ? new Date(startAt) : undefined,
         endAt: endAt ? new Date(endAt) : undefined,
         location,
+        ...(eventType && { eventType }),
       },
       include: { tags: true },
     });

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Event } from '../lib/api';
+import { Event, EventType, settingsAPI } from '../lib/api';
 
 interface EventModalProps {
   isOpen: boolean;
@@ -29,7 +30,18 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
     startAt: '',
     endAt: '',
     location: '',
+    eventType: 'OTHER' as EventType,
   });
+
+  // Fetch saved locations from settings
+  const { data: settings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: settingsAPI.getSettings,
+  });
+  const savedLocations = settings?.savedLocations || [];
+  
+  console.log('EventModal - Settings:', settings);
+  console.log('EventModal - Saved Locations:', savedLocations);
 
   useEffect(() => {
     if (event) {
@@ -39,6 +51,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
         startAt: formatDateForInput(new Date(event.startAt)),
         endAt: formatDateForInput(new Date(event.endAt)),
         location: event.location || '',
+        eventType: event.eventType || 'OTHER',
       });
     } else if (initialDate) {
       const start = new Date(initialDate);
@@ -51,6 +64,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
         startAt: formatDateForInput(start),
         endAt: formatDateForInput(end),
         location: '',
+        eventType: 'OTHER',
       });
     }
   }, [event, initialDate]);
@@ -129,14 +143,41 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
             </div>
           </div>
 
-          <div className="form-group">
-            <label>{t('event.location', '위치')}</label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            />
+          <div className="form-row">
+            <div className="form-group">
+              <label>{t('event.type', '일정 유형')}</label>
+              <select
+                value={formData.eventType}
+                onChange={(e) => setFormData({ ...formData, eventType: e.target.value as EventType })}
+              >
+                <option value="WORK">💼 {t('event.type.work', '업무')}</option>
+                <option value="MEETING">👥 {t('event.type.meeting', '회의')}</option>
+                <option value="PERSONAL">😊 {t('event.type.personal', '개인')}</option>
+                <option value="APPOINTMENT">📅 {t('event.type.appointment', '약속')}</option>
+                <option value="OTHER">📌 {t('event.type.other', '기타')}</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>{t('event.location', '위치')}</label>
+              <input
+                list="location-suggestions"
+                type="text"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder={t('event.location.placeholder', '위치를 입력하거나 선택하세요')}
+              />
+              {savedLocations.length > 0 && (
+                <datalist id="location-suggestions">
+                  {savedLocations.map((loc, idx) => (
+                    <option key={idx} value={loc} />
+                  ))}
+                </datalist>
+              )}
+            </div>
           </div>
+
+
 
           <div className="modal-actions">
             {event && onDelete && (
@@ -229,18 +270,34 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
           }
 
           .form-group input,
-          .form-group textarea {
+          .form-group textarea,
+          .form-group select {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid var(--color-border);
             border-radius: 4px;
             font-size: 1rem;
+            font-family: inherit;
+            background-color: white;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
           }
 
           .form-group input:focus,
-          .form-group textarea:focus {
+          .form-group textarea:focus,
+          .form-group select:focus {
             outline: none;
             border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px hsla(220, 90%, 56%, 0.1);
+          }
+
+          .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 12px;
+            padding-right: 2.5rem;
           }
 
           .form-row {

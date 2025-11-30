@@ -160,6 +160,72 @@
   margin-top: 0.125rem;
 }
 
+/* Event type colors */
+.event-type-work {
+  background: hsla(220, 90%, 56%, 0.1) !important;
+  border-left-color: hsl(220, 90%, 56%) !important;
+}
+
+.event-type-work:hover {
+  background: hsla(220, 90%, 56%, 0.15) !important;
+}
+
+.event-type-work .event-time {
+  color: hsl(220, 90%, 56%);
+}
+
+.event-type-meeting {
+  background: hsla(30, 90%, 56%, 0.1) !important;
+  border-left-color: hsl(30, 90%, 56%) !important;
+}
+
+.event-type-meeting:hover {
+  background: hsla(30, 90%, 56%, 0.15) !important;
+}
+
+.event-type-meeting .event-time {
+  color: hsl(30, 90%, 56%);
+}
+
+.event-type-personal {
+  background: hsla(150, 70%, 45%, 0.1) !important;
+  border-left-color: hsl(150, 70%, 45%) !important;
+}
+
+.event-type-personal:hover {
+  background: hsla(150, 70%, 45%, 0.15) !important;
+}
+
+.event-type-personal .event-time {
+  color: hsl(150, 70%, 45%);
+}
+
+.event-type-appointment {
+  background: hsla(280, 70%, 60%, 0.1) !important;
+  border-left-color: hsl(280, 70%, 60%) !important;
+}
+
+.event-type-appointment:hover {
+  background: hsla(280, 70%, 60%, 0.15) !important;
+}
+
+.event-type-appointment .event-time {
+  color: hsl(280, 70%, 60%);
+}
+
+.event-type-other {
+  background: hsla(0, 0%, 50%, 0.1) !important;
+  border-left-color: hsl(0, 0%, 50%) !important;
+}
+
+.event-type-other:hover {
+  background: hsla(0, 0%, 50%, 0.15) !important;
+}
+
+.event-type-other .event-time {
+  color: hsl(0, 0%, 50%);
+}
+
 .month-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

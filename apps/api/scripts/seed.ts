@@ -200,7 +200,7 @@ async function main() {
   ]);
   console.log(`✅ Created ${2} task reminders`);
 
-  // Create Events
+  // Create Events with different types
   console.log('\n📅 Creating events...');
   const events = await Promise.all([
     prisma.event.create({
@@ -211,6 +211,7 @@ async function main() {
         startAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 0),
         endAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 30),
         location: '회의실 A',
+        eventType: 'MEETING',
         sourceCalendar: 'manual',
         tags: { connect: [{ id: workTag.id }] },
       },
@@ -223,6 +224,7 @@ async function main() {
         startAt: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 14, 0),
         endAt: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 15, 30),
         location: '온라인 (Zoom)',
+        eventType: 'WORK',
         sourceCalendar: 'manual',
         tags: { connect: [{ id: workTag.id }, { id: urgentTag.id }] },
       },
@@ -235,8 +237,21 @@ async function main() {
         startAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0),
         endAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 13, 0),
         location: '강남역 근처 레스토랑',
+        eventType: 'PERSONAL',
         sourceCalendar: 'manual',
         tags: { connect: [{ id: personalTag.id }] },
+      },
+    }),
+    prisma.event.create({
+      data: {
+        userId: user1.id,
+        title: '치과 예약',
+        description: '정기 검진',
+        startAt: new Date(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate(), 15, 0),
+        endAt: new Date(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate(), 16, 0),
+        location: '강남 치과',
+        eventType: 'APPOINTMENT',
+        sourceCalendar: 'manual',
       },
     }),
     prisma.event.create({
@@ -247,11 +262,12 @@ async function main() {
         startAt: new Date(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate(), 9, 0),
         endAt: new Date(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate(), 11, 0),
         location: '본사 대회의실',
+        eventType: 'MEETING',
         sourceCalendar: 'manual',
       },
     }),
   ]);
-  console.log(`✅ Created ${events.length} events`);
+  console.log(`✅ Created ${events.length} events with different types`);
 
   // Create Event Reminder
   await prisma.reminder.create({
@@ -377,7 +393,7 @@ async function main() {
   await Promise.all(analyticsData);
   console.log(`✅ Created ${analyticsData.length} days of analytics data`);
 
-  // Create User Settings
+  // Create User Settings with saved locations
   console.log('\n⚙️  Creating user settings...');
   await prisma.userSettings.create({
     data: {
@@ -386,9 +402,10 @@ async function main() {
       ollamaBaseUrl: 'http://localhost:11434',
       ollamaModel: 'llama2',
       pop3Enabled: false,
+      savedLocations: ['회의실 A', '회의실 B', '본사 대회의실', '온라인 (Zoom)', '강남역 근처 레스토랑', '홈오피스'],
     },
   });
-  console.log(`✅ Created user settings for ${user1.email}`);
+  console.log(`✅ Created user settings for ${user1.email} with saved locations`);
 
   // Create Webhook Config
   console.log('\n🔗 Creating webhook config...');

@@ -59,6 +59,17 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
   console.log('📅 Calendar Debug - Week Dates:', weekDates);
   console.log('📅 Calendar Debug - Month Dates Count:', monthDates.length);
 
+  // Helper function to get event type color class
+  const getEventTypeClass = (eventType?: string) => {
+    switch (eventType) {
+      case 'WORK': return 'event-type-work';
+      case 'MEETING': return 'event-type-meeting';
+      case 'PERSONAL': return 'event-type-personal';
+      case 'APPOINTMENT': return 'event-type-appointment';
+      default: return 'event-type-other';
+    }
+  };
+
   const handleDateClick = (date: Date) => {
     setSelectedDateForCreate(date);
     setSelectedEvent(null);
@@ -144,7 +155,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                     {dayEvents.map(event => (
                       <div 
                         key={event.id} 
-                        className="calendar-event"
+                        className={`calendar-event ${getEventTypeClass(event.eventType)}`}
                         onClick={(e) => handleEventClick(event, e)}
                       >
                         <div className="event-time">
@@ -190,7 +201,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                     {dayEvents.slice(0, 3).map(event => (
                       <div 
                         key={event.id} 
-                        className="calendar-event-compact"
+                        className={`calendar-event-compact ${getEventTypeClass(event.eventType)}`}
                         onClick={(e) => handleEventClick(event, e)}
                       >
                         {event.title}

@@ -30,6 +30,8 @@ export interface Reminder {
   sent: boolean;
 }
 
+export type EventType = 'WORK' | 'PERSONAL' | 'MEETING' | 'APPOINTMENT' | 'OTHER';
+
 export interface Event {
   id: string;
   title: string;
@@ -37,6 +39,7 @@ export interface Event {
   startAt: string;
   endAt: string;
   location?: string;
+  eventType?: EventType;
   sourceCalendar?: string;
   createdAt: string;
   reminders?: Reminder[];
@@ -129,6 +132,7 @@ export interface UserSettings {
   pop3User?: string;
   pop3Password?: string;
   pop3Tls?: boolean;
+  savedLocations?: string[];
 }
 
 export interface WebhookConfig {
