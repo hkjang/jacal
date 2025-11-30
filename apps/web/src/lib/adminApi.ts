@@ -221,4 +221,45 @@ export const adminAPI = {
     const res = await api.post('/api/admin/email/test');
     return res.data;
   },
+
+  // Team Management
+  getAllTeams: async (): Promise<any[]> => {
+    const res = await api.get('/api/admin/teams');
+    return res.data;
+  },
+
+  getTeamById: async (id: string): Promise<any> => {
+    const res = await api.get(`/api/admin/teams/${id}`);
+    return res.data;
+  },
+
+  createTeam: async (data: { name: string; description?: string; ownerId: string }): Promise<any> => {
+    const res = await api.post('/api/admin/teams', data);
+    return res.data;
+  },
+
+  updateTeam: async (id: string, data: { name?: string; description?: string }): Promise<any> => {
+    const res = await api.put(`/api/admin/teams/${id}`, data);
+    return res.data;
+  },
+
+  deleteTeam: async (id: string): Promise<any> => {
+    const res = await api.delete(`/api/admin/teams/${id}`);
+    return res.data;
+  },
+
+  addTeamMember: async (teamId: string, userId: string, role?: string): Promise<any> => {
+    const res = await api.post(`/api/admin/teams/${teamId}/members`, { userId, role });
+    return res.data;
+  },
+
+  removeTeamMember: async (teamId: string, userId: string): Promise<any> => {
+    const res = await api.delete(`/api/admin/teams/${teamId}/members/${userId}`);
+    return res.data;
+  },
+
+  updateTeamMemberRole: async (teamId: string, userId: string, role: string): Promise<any> => {
+    const res = await api.put(`/api/admin/teams/${teamId}/members/${userId}`, { role });
+    return res.data;
+  },
 };
