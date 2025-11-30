@@ -226,6 +226,20 @@
   color: hsl(0, 0%, 50%);
 }
 
+/* Team event styling */
+.event-type-team {
+  background: hsla(260, 90%, 65%, 0.1) !important;
+  border-left-color: hsl(260, 90%, 65%) !important;
+}
+
+.event-type-team:hover {
+  background: hsla(260, 90%, 65%, 0.15) !important;
+}
+
+.event-type-team .event-time {
+  color: hsl(260, 90%, 65%);
+}
+
 .month-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

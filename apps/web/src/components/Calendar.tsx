@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Event, eventAPI } from '../lib/api';
 import { adminAPI } from '../lib/adminApi';
+import { calendarAPI } from '../lib/calendarApi';
+import { teamAPI } from '../lib/teamApi';
 import { useTranslation } from 'react-i18next';
 import { getWeekDates, getMonthDates, filterEventsForDate } from '../lib/dateUtils';
 import { useCalendarNavigation } from '../hooks/useCalendarNavigation';
@@ -15,6 +17,7 @@ interface CalendarProps {
 
 const Calendar = ({ isAdmin = false }: CalendarProps) => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { 
     viewMode, 
     setViewMode, 
@@ -39,29 +42,19 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
         const response = await adminAPI.getEvents({ limit: 1000 });
         return response.data || [];
       } else {
-        // For regular users, use eventAPI
-        return await eventAPI.getAll();
+        // For regular users, use calendarAPI to get personal + team events
+        return await calendarAPI.getAllEvents();
       }
     },
   });
 
   const events = Array.isArray(eventsData) ? eventsData : [];
   
-  // Debug logging
-  console.log('📅 Calendar Debug - Events Data:', eventsData);
-  console.log('📅 Calendar Debug - Events Count:', events.length);
-  console.log('📅 Calendar Debug - View Mode:', viewMode);
-  console.log('📅 Calendar Debug - Selected Date:', selectedDate);
-
-  const weekDates = viewMode === 'week' ? getWeekDates(selectedDate) : [];
-  const monthDates = viewMode === 'month' ? getMonthDates(selectedDate) : [];
-  
-  console.log('📅 Calendar Debug - Week Dates:', weekDates);
-  console.log('📅 Calendar Debug - Month Dates Count:', monthDates.length);
-
   // Helper function to get event type color class
-  const getEventTypeClass = (eventType?: string) => {
-    switch (eventType) {
+  const getEventTypeClass = (event: Event) => {
+    if ((event as any).isTeamEvent) return 'event-type-team';
+    
+    switch (event.eventType) {
       case 'WORK': return 'event-type-work';
       case 'MEETING': return 'event-type-meeting';
       case 'PERSONAL': return 'event-type-personal';
@@ -83,21 +76,50 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
     setModalOpen(true);
   };
 
-  const handleSaveEvent = async (eventData: Partial<Event>) => {
-    if (selectedEvent) {
-      await updateMutation.mutateAsync({ id: selectedEvent.id, data: eventData });
-    } else {
-      await createMutation.mutateAsync(eventData);
+  const handleSaveEvent = async (eventData: Partial<Event>, teamId?: string) => {
+    try {
+      if (selectedEvent) {
+        // Update existing event
+        if ((selectedEvent as any).isTeamEvent) {
+          await teamAPI.updateEvent(selectedEvent.id, eventData);
+        } else {
+          await updateMutation.mutateAsync({ id: selectedEvent.id, data: eventData });
+        }
+      } else {
+        // Create new event
+        if (teamId) {
+          await teamAPI.createEvent(teamId, eventData);
+        } else {
+          await createMutation.mutateAsync(eventData);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      setModalOpen(false);
+    } catch (error) {
+      console.error('Failed to save event:', error);
+      alert(t('calendar.saveError', '일정 저장에 실패했습니다.'));
     }
-    setModalOpen(false);
   };
 
   const handleDeleteEvent = async () => {
     if (selectedEvent && confirm(t('calendar.confirmDelete', '이 일정을 삭제하시겠습니까?'))) {
-      await deleteMutation.mutateAsync(selectedEvent.id);
-      setModalOpen(false);
+      try {
+        if ((selectedEvent as any).isTeamEvent) {
+          await teamAPI.deleteEvent(selectedEvent.id);
+        } else {
+          await deleteMutation.mutateAsync(selectedEvent.id);
+        }
+        queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+        setModalOpen(false);
+      } catch (error) {
+        console.error('Failed to delete event:', error);
+        alert(t('calendar.deleteError', '일정 삭제에 실패했습니다.'));
+      }
     }
   };
+
+  const weekDates = viewMode === 'week' ? getWeekDates(selectedDate) : [];
+  const monthDates = viewMode === 'month' ? getMonthDates(selectedDate) : [];
 
   return (
     <div className="calendar-container">
@@ -155,7 +177,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                     {dayEvents.map(event => (
                       <div 
                         key={event.id} 
-                        className={`calendar-event ${getEventTypeClass(event.eventType)}`}
+                        className={`calendar-event ${getEventTypeClass(event)}`}
                         onClick={(e) => handleEventClick(event, e)}
                       >
                         <div className="event-time">
@@ -165,8 +187,10 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                           })}
                         </div>
                         <div className="event-title">{event.title}</div>
-                        {isAdmin && (event as any).user && (
-                          <div className="event-user">👤 {(event as any).user.name}</div>
+                        {((event as any).isTeamEvent || (isAdmin && (event as any).user)) && (
+                          <div className="event-user">
+                            {(event as any).isTeamEvent ? '👥 ' + (event as any).team?.name : '👤 ' + (event as any).user?.name}
+                          </div>
                         )}
                       </div>
                     ))}
@@ -201,11 +225,10 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                     {dayEvents.slice(0, 3).map(event => (
                       <div 
                         key={event.id} 
-                        className={`calendar-event-compact ${getEventTypeClass(event.eventType)}`}
+                        className={`calendar-event-compact ${getEventTypeClass(event)}`}
                         onClick={(e) => handleEventClick(event, e)}
                       >
                         {event.title}
-                        {isAdmin && (event as any).user && ` (${(event as any).user.name})`}
                       </div>
                     ))}
                     {dayEvents.length > 3 && (

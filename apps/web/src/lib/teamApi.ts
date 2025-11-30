@@ -45,4 +45,26 @@ export const teamAPI = {
     const res = await api.post(`/api/teams/events/${eventId}/comments`, { content });
     return res.data;
   },
+
+  updateTeam: async (id: string, data: { name: string; description?: string }): Promise<Team> => {
+    const res = await api.put(`/api/teams/${id}`, data);
+    return res.data;
+  },
+
+  deleteTeam: async (id: string): Promise<void> => {
+    await api.delete(`/api/teams/${id}`);
+  },
+
+  removeMember: async (teamId: string, userId: string): Promise<void> => {
+    await api.delete(`/api/teams/${teamId}/members/${userId}`);
+  },
+
+  updateEvent: async (eventId: string, data: any): Promise<SharedEvent> => {
+    const res = await api.put(`/api/teams/events/${eventId}`, data);
+    return res.data;
+  },
+
+  deleteEvent: async (eventId: string): Promise<void> => {
+    await api.delete(`/api/teams/events/${eventId}`);
+  },
 };

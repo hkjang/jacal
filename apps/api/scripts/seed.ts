@@ -438,7 +438,14 @@ async function main() {
       description: '마케팅 및 홍보 팀',
     },
   });
-  console.log(`✅ Created ${2} teams`);
+
+  const team3 = await prisma.team.create({
+    data: {
+      name: 'Engineering',
+      description: 'The core engineering team',
+    },
+  });
+  console.log(`✅ Created ${3} teams`);
 
   // Create Team Members
   console.log('\n👤 Creating team members...');
@@ -454,6 +461,12 @@ async function main() {
     }),
     prisma.teamMember.create({
       data: { teamId: team2.id, userId: user2.id, role: 'ADMIN' },
+    }),
+    prisma.teamMember.create({
+      data: { teamId: team3.id, userId: user1.id, role: 'OWNER' },
+    }),
+    prisma.teamMember.create({
+      data: { teamId: team3.id, userId: user3.id, role: 'MEMBER' },
     }),
   ]);
   console.log(`✅ Created team members`);
@@ -483,7 +496,19 @@ async function main() {
       location: '온라인',
     },
   });
-  console.log(`✅ Created ${2} shared events`);
+
+  const sharedEvent3 = await prisma.sharedEvent.create({
+    data: {
+      teamId: team3.id,
+      authorId: user1.id,
+      title: 'Tech Talk',
+      description: 'Monthly tech sharing session',
+      startAt: new Date(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate(), 14, 0),
+      endAt: new Date(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate(), 15, 30),
+      location: 'Conference Room A',
+    },
+  });
+  console.log(`✅ Created ${3} shared events`);
 
   // Create Comments
   console.log('\n💬 Creating comments...');

@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Event, EventType, settingsAPI } from '../lib/api';
+import { teamAPI } from '../lib/teamApi';
 
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (event: Partial<Event>) => void;
+  onSave: (event: Partial<Event>, teamId?: string) => void;
   onDelete?: () => void;
   event?: Event | null;
   initialDate?: Date;
@@ -32,6 +33,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
     location: '',
     eventType: 'OTHER' as EventType,
   });
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
 
   // Fetch saved locations from settings
   const { data: settings } = useQuery({
@@ -39,9 +41,13 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
     queryFn: settingsAPI.getSettings,
   });
   const savedLocations = settings?.savedLocations || [];
-  
-  console.log('EventModal - Settings:', settings);
-  console.log('EventModal - Saved Locations:', savedLocations);
+
+  // Fetch teams
+  const { data: teams } = useQuery({
+    queryKey: ['teams'],
+    queryFn: teamAPI.getMyTeams,
+    enabled: isOpen,
+  });
 
   useEffect(() => {
     if (event) {
@@ -53,6 +59,12 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
         location: event.location || '',
         eventType: event.eventType || 'OTHER',
       });
+      // If it's a team event, set the team ID
+      if ((event as any).isTeamEvent && (event as any).teamId) {
+        setSelectedTeamId((event as any).teamId);
+      } else {
+        setSelectedTeamId('');
+      }
     } else if (initialDate) {
       const start = new Date(initialDate);
       start.setHours(9, 0, 0, 0); // Set to 9 AM local time
@@ -66,6 +78,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
         location: '',
         eventType: 'OTHER',
       });
+      setSelectedTeamId('');
     }
   }, [event, initialDate]);
 
@@ -87,10 +100,12 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
       ...formData,
       startAt: new Date(formData.startAt),
       endAt: new Date(formData.endAt),
-    } as any);
+    } as any, selectedTeamId || undefined);
   };
 
   if (!isOpen) return null;
+
+  const isTeamEvent = !!event && (event as any).isTeamEvent;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -110,6 +125,20 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
               required
               autoFocus
             />
+          </div>
+
+          <div className="form-group">
+            <label>{t('event.calendar', '캘린더')}</label>
+            <select
+              value={selectedTeamId}
+              onChange={(e) => setSelectedTeamId(e.target.value)}
+              disabled={!!event} // Disable changing calendar for existing events for now
+            >
+              <option value="">👤 {t('event.personal', '개인')}</option>
+              {teams?.map(team => (
+                <option key={team.id} value={team.id}>👥 {team.name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">
@@ -144,19 +173,21 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
           </div>
 
           <div className="form-row">
-            <div className="form-group">
-              <label>{t('event.type', '일정 유형')}</label>
-              <select
-                value={formData.eventType}
-                onChange={(e) => setFormData({ ...formData, eventType: e.target.value as EventType })}
-              >
-                <option value="WORK">💼 {t('event.type.work', '업무')}</option>
-                <option value="MEETING">👥 {t('event.type.meeting', '회의')}</option>
-                <option value="PERSONAL">😊 {t('event.type.personal', '개인')}</option>
-                <option value="APPOINTMENT">📅 {t('event.type.appointment', '약속')}</option>
-                <option value="OTHER">📌 {t('event.type.other', '기타')}</option>
-              </select>
-            </div>
+            {!selectedTeamId && (
+              <div className="form-group">
+                <label>{t('event.type', '일정 유형')}</label>
+                <select
+                  value={formData.eventType}
+                  onChange={(e) => setFormData({ ...formData, eventType: e.target.value as EventType })}
+                >
+                  <option value="WORK">💼 {t('event.type.work', '업무')}</option>
+                  <option value="MEETING">👥 {t('event.type.meeting', '회의')}</option>
+                  <option value="PERSONAL">😊 {t('event.type.personal', '개인')}</option>
+                  <option value="APPOINTMENT">📅 {t('event.type.appointment', '약속')}</option>
+                  <option value="OTHER">📌 {t('event.type.other', '기타')}</option>
+                </select>
+              </div>
+            )}
 
             <div className="form-group">
               <label>{t('event.location', '위치')}</label>
@@ -176,8 +207,6 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
               )}
             </div>
           </div>
-
-
 
           <div className="modal-actions">
             {event && onDelete && (
