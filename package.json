@@ -4,13 +4,41 @@
   "description": "Productivity Platform",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "npm run dev:all",
+    "dev:all": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "npm run dev --workspace=api",
+    "dev:web": "npm run dev --workspace=web",
+    "build": "npm run build:api && npm run build:web",
+    "build:api": "npm run build --workspace=api",
+    "build:web": "npm run build --workspace=web",
+    "start": "npm run start --workspace=api",
+    "start:api": "npm run start --workspace=api",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:api": "npm run lint --workspace=api --if-present",
+    "lint:web": "npm run lint --workspace=web",
+    "clean": "rimraf node_modules apps/*/node_modules apps/*/dist packages/*/node_modules",
+    "clean:dist": "rimraf apps/*/dist",
+    "db:start": "docker-compose up -d",
+    "db:stop": "docker-compose down",
+    "db:generate": "npm run db:generate --workspace=api",
+    "db:push": "npm run db:push --workspace=api",
+    "db:migrate": "npm run db:migrate --workspace=api",
+    "db:seed": "npm run db:seed --workspace=api",
+    "db:studio": "npm run db:studio --workspace=api",
+    "create-admin": "npm run create-admin --workspace=api",
+    "preview": "npm run preview --workspace=web",
+    "test": "npm run test --workspaces --if-present",
+    "postinstall": "npm run db:generate --workspace=api"
   },
-  "keywords": [],
+  "keywords": ["productivity", "calendar", "tasks", "ai"],
   "author": "",
   "license": "ISC",
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "rimraf": "^6.0.1"
+  }
 }

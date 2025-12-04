@@ -1,12 +1,44 @@
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminAPI } from '../../lib/adminApi';
 import './UserSettingsModal.css';
 
 interface UserSettingsModalProps {
-  user: any;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
   onClose: () => void;
+}
+
+interface UserSettings {
+  id?: string;
+  ollamaEnabled?: boolean;
+  ollamaBaseUrl?: string;
+  ollamaModel?: string;
+  pop3Enabled?: boolean;
+  pop3Host?: string;
+  pop3Port?: number;
+  pop3User?: string;
+  pop3Password?: string;
+  pop3Tls?: boolean;
+  savedLocations?: string[];
+}
+
+interface WebhookConfig {
+  id?: string;
+  enabled?: boolean;
+  url?: string;
+  columnMapping?: Record<string, string>;
+}
+
+interface ConnectedAccount {
+  id: string;
+  provider: string;
+  providerId: string;
+  createdAt: string;
 }
 
 type TabType = 'ai' | 'email' | 'webhook' | 'integrations' | 'locations';
@@ -15,40 +47,81 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>('ai');
+  const [newLocation, setNewLocation] = useState('');
+  const [locations, setLocations] = useState<string[]>([]);
+  const [locationsLoaded, setLocationsLoaded] = useState(false);
 
   // Fetch user settings
-  const { data: settings, isLoading: settingsLoading } = useQuery({
+  const { data: settings, isLoading: settingsLoading, error: settingsError } = useQuery<UserSettings>({
     queryKey: ['admin', 'user-settings', user.id],
     queryFn: () => adminAPI.getUserSettings(user.id),
   });
 
   // Fetch webhook config
-  const { data: webhookConfig, isLoading: webhookLoading } = useQuery({
+  const { data: webhookConfig, isLoading: webhookLoading, error: webhookError } = useQuery<WebhookConfig>({
     queryKey: ['admin', 'user-webhook', user.id],
     queryFn: () => adminAPI.getUserWebhook(user.id),
   });
 
   // Fetch integrations
-  const { data: integrations, isLoading: integrationsLoading } = useQuery({
+  const { data: integrations, isLoading: integrationsLoading, error: integrationsError } = useQuery<ConnectedAccount[]>({
     queryKey: ['admin', 'user-integrations', user.id],
     queryFn: () => adminAPI.getUserIntegrations(user.id),
   });
 
+  // Initialize locations when settings load
+  if (settings?.savedLocations && !locationsLoaded) {
+    setLocations(Array.isArray(settings.savedLocations) ? settings.savedLocations : []);
+    setLocationsLoaded(true);
+  }
+
   const updateSettingsMutation = useMutation({
-    mutationFn: (data: any) => adminAPI.updateUserSettings(user.id, data),
+    mutationFn: (data: Partial<UserSettings>) => adminAPI.updateUserSettings(user.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'user-settings', user.id] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       alert(t('admin.settingsUpdated', '설정이 업데이트되었습니다.'));
     },
+    onError: (error: Error) => {
+      alert(t('admin.updateFailed', '업데이트 실패: ') + error.message);
+    },
+  });
+
+  const deleteSettingsMutation = useMutation({
+    mutationFn: () => adminAPI.deleteUserSettings(user.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user-settings', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      setLocations([]);
+      setLocationsLoaded(false);
+      alert(t('admin.settingsDeleted', '설정이 초기화되었습니다.'));
+    },
+    onError: (error: Error) => {
+      alert(t('admin.deleteFailed', '삭제 실패: ') + error.message);
+    },
   });
 
   const updateWebhookMutation = useMutation({
-    mutationFn: (data: any) => adminAPI.updateUserWebhook(user.id, data),
+    mutationFn: (data: Partial<WebhookConfig>) => adminAPI.updateUserWebhook(user.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'user-webhook', user.id] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       alert(t('admin.webhookUpdated', '웹훅 설정이 업데이트되었습니다.'));
+    },
+    onError: (error: Error) => {
+      alert(t('admin.updateFailed', '업데이트 실패: ') + error.message);
+    },
+  });
+
+  const deleteWebhookMutation = useMutation({
+    mutationFn: () => adminAPI.deleteUserWebhook(user.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user-webhook', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      alert(t('admin.webhookDeleted', '웹훅 설정이 삭제되었습니다.'));
+    },
+    onError: (error: Error) => {
+      alert(t('admin.deleteFailed', '삭제 실패: ') + error.message);
     },
   });
 
@@ -58,6 +131,9 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
       queryClient.invalidateQueries({ queryKey: ['admin', 'user-integrations', user.id] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       alert(t('admin.integrationDeleted', '연동이 삭제되었습니다.'));
+    },
+    onError: (error: Error) => {
+      alert(t('admin.deleteFailed', '삭제 실패: ') + error.message);
     },
   });
 
@@ -90,10 +166,10 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
     const columnMappingStr = formData.get('columnMapping') as string;
     
     let columnMapping = null;
-    if (columnMappingStr) {
+    if (columnMappingStr?.trim()) {
       try {
         columnMapping = JSON.parse(columnMappingStr);
-      } catch (err) {
+      } catch {
         alert(t('admin.invalidJSON', '잘못된 JSON 형식입니다.'));
         return;
       }
@@ -106,31 +182,55 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
     });
   };
 
-  const handleLocationsSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const locationsStr = formData.get('savedLocations') as string;
-    
-    let savedLocations = [];
-    if (locationsStr) {
-      try {
-        savedLocations = JSON.parse(locationsStr);
-      } catch (err) {
-        alert(t('admin.invalidJSON', '잘못된 JSON 형식입니다.'));
-        return;
-      }
+  const handleAddLocation = () => {
+    if (newLocation.trim() && !locations.includes(newLocation.trim())) {
+      setLocations([...locations, newLocation.trim()]);
+      setNewLocation('');
     }
-
-    updateSettingsMutation.mutate({
-      savedLocations,
-    });
   };
 
-  if (settingsLoading || webhookLoading || integrationsLoading) {
+  const handleRemoveLocation = (index: number) => {
+    setLocations(locations.filter((_, i) => i !== index));
+  };
+
+  const handleSaveLocations = () => {
+    updateSettingsMutation.mutate({ savedLocations: locations });
+  };
+
+  const handleResetSettings = (type: 'settings' | 'webhook') => {
+    if (confirm(t('admin.confirmReset', '정말 설정을 초기화하시겠습니까?'))) {
+      if (type === 'settings') {
+        deleteSettingsMutation.mutate();
+      } else {
+        deleteWebhookMutation.mutate();
+      }
+    }
+  };
+
+  const isLoading = settingsLoading || webhookLoading || integrationsLoading;
+  const hasError = settingsError || webhookError || integrationsError;
+  const isMutating = updateSettingsMutation.isPending || updateWebhookMutation.isPending || 
+                     deleteSettingsMutation.isPending || deleteWebhookMutation.isPending ||
+                     deleteIntegrationMutation.isPending;
+
+  if (isLoading) {
     return (
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
           <div className="loading">{t('common.loading', '로딩 중...')}</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="error-message">
+            {t('common.error', '오류가 발생했습니다.')}
+            <button onClick={onClose} className="btn btn-secondary">{t('common.close', '닫기')}</button>
+          </div>
         </div>
       </div>
     );
@@ -145,7 +245,7 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
             <strong>{user.name}</strong>
             <span className="text-muted">{user.email}</span>
           </div>
-          <button onClick={onClose} className="close-btn">✕</button>
+          <button onClick={onClose} className="close-btn" disabled={isMutating}>✕</button>
         </div>
 
         <div className="tabs">
@@ -185,7 +285,7 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
           {activeTab === 'ai' && (
             <form onSubmit={handleAISubmit}>
               <div className="form-group">
-                <label>
+                <label className="checkbox-label">
                   <input
                     type="checkbox"
                     name="ollamaEnabled"
@@ -213,8 +313,16 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
                 />
               </div>
               <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
-                  {t('common.save', '저장')}
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => handleResetSettings('settings')}
+                  disabled={isMutating}
+                >
+                  {t('admin.resetSettings', '초기화')}
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={isMutating}>
+                  {isMutating ? t('common.saving', '저장 중...') : t('common.save', '저장')}
                 </button>
               </div>
             </form>
@@ -223,7 +331,7 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
           {activeTab === 'email' && (
             <form onSubmit={handleEmailSubmit}>
               <div className="form-group">
-                <label>
+                <label className="checkbox-label">
                   <input
                     type="checkbox"
                     name="pop3Enabled"
@@ -232,40 +340,45 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
                   {t('admin.enablePOP3', 'POP3 활성화')}
                 </label>
               </div>
-              <div className="form-group">
-                <label>{t('admin.pop3Host', 'POP3 호스트')}</label>
-                <input
-                  type="text"
-                  name="pop3Host"
-                  defaultValue={settings?.pop3Host || ''}
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>{t('admin.pop3Host', 'POP3 호스트')}</label>
+                  <input
+                    type="text"
+                    name="pop3Host"
+                    defaultValue={settings?.pop3Host || ''}
+                    placeholder="pop.gmail.com"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>{t('admin.pop3Port', 'POP3 포트')}</label>
+                  <input
+                    type="number"
+                    name="pop3Port"
+                    defaultValue={settings?.pop3Port || 995}
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>{t('admin.pop3User', 'POP3 사용자')}</label>
+                  <input
+                    type="text"
+                    name="pop3User"
+                    defaultValue={settings?.pop3User || ''}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>{t('admin.pop3Password', 'POP3 비밀번호')}</label>
+                  <input
+                    type="password"
+                    name="pop3Password"
+                    defaultValue={settings?.pop3Password || ''}
+                  />
+                </div>
               </div>
               <div className="form-group">
-                <label>{t('admin.pop3Port', 'POP3 포트')}</label>
-                <input
-                  type="number"
-                  name="pop3Port"
-                  defaultValue={settings?.pop3Port || 995}
-                />
-              </div>
-              <div className="form-group">
-                <label>{t('admin.pop3User', 'POP3 사용자')}</label>
-                <input
-                  type="text"
-                  name="pop3User"
-                  defaultValue={settings?.pop3User || ''}
-                />
-              </div>
-              <div className="form-group">
-                <label>{t('admin.pop3Password', 'POP3 비밀번호')}</label>
-                <input
-                  type="password"
-                  name="pop3Password"
-                  defaultValue={settings?.pop3Password || ''}
-                />
-              </div>
-              <div className="form-group">
-                <label>
+                <label className="checkbox-label">
                   <input
                     type="checkbox"
                     name="pop3Tls"
@@ -275,8 +388,8 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
                 </label>
               </div>
               <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
-                  {t('common.save', '저장')}
+                <button type="submit" className="btn btn-primary" disabled={isMutating}>
+                  {isMutating ? t('common.saving', '저장 중...') : t('common.save', '저장')}
                 </button>
               </div>
             </form>
@@ -285,7 +398,7 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
           {activeTab === 'webhook' && (
             <form onSubmit={handleWebhookSubmit}>
               <div className="form-group">
-                <label>
+                <label className="checkbox-label">
                   <input
                     type="checkbox"
                     name="enabled"
@@ -313,8 +426,16 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
                 />
               </div>
               <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
-                  {t('common.save', '저장')}
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => handleResetSettings('webhook')}
+                  disabled={isMutating}
+                >
+                  {t('admin.resetWebhook', '초기화')}
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={isMutating}>
+                  {isMutating ? t('common.saving', '저장 중...') : t('common.save', '저장')}
                 </button>
               </div>
             </form>
@@ -334,10 +455,10 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
                     </tr>
                   </thead>
                   <tbody>
-                    {integrations.map((integration: any) => (
+                    {integrations.map((integration) => (
                       <tr key={integration.id}>
                         <td><span className="provider-badge">{integration.provider}</span></td>
-                        <td>{integration.providerId}</td>
+                        <td className="provider-id">{integration.providerId}</td>
                         <td>{new Date(integration.createdAt).toLocaleDateString()}</td>
                         <td>
                           <button
@@ -347,6 +468,7 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
                               }
                             }}
                             className="btn btn-sm btn-danger"
+                            disabled={deleteIntegrationMutation.isPending}
                           >
                             {t('common.delete', '삭제')}
                           </button>
@@ -356,34 +478,69 @@ export default function UserSettingsModal({ user, onClose }: UserSettingsModalPr
                   </tbody>
                 </table>
               ) : (
-                <p className="text-muted">{t('admin.noIntegrations', '연동된 계정이 없습니다.')}</p>
+                <p className="text-muted empty-message">{t('admin.noIntegrations', '연동된 계정이 없습니다.')}</p>
               )}
             </div>
           )}
 
           {activeTab === 'locations' && (
-            <form onSubmit={handleLocationsSubmit}>
-              <div className="form-group">
-                <label>{t('admin.savedLocations', '저장된 위치 (JSON 배열)')}</label>
-                <textarea
-                  name="savedLocations"
-                  defaultValue={settings?.savedLocations ? JSON.stringify(settings.savedLocations, null, 2) : '[]'}
-                  rows={8}
-                  placeholder='["서울 강남구", "서울 종로구"]'
+            <div className="locations-editor">
+              <h4>{t('admin.savedLocations', '저장된 위치')}</h4>
+              
+              <div className="location-add">
+                <input
+                  type="text"
+                  value={newLocation}
+                  onChange={(e) => setNewLocation(e.target.value)}
+                  placeholder={t('admin.newLocationPlaceholder', '새 위치 입력...')}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddLocation())}
                 />
-                <small className="help-text">
-                  {t('admin.locationsHelp', '위치 목록을 JSON 배열 형식으로 입력하세요.')}
-                </small>
-              </div>
-              <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
-                  {t('common.save', '저장')}
+                <button 
+                  type="button" 
+                  onClick={handleAddLocation} 
+                  className="btn btn-secondary"
+                  disabled={!newLocation.trim()}
+                >
+                  {t('common.add', '추가')}
                 </button>
               </div>
-            </form>
+
+              <ul className="locations-list">
+                {locations.length === 0 ? (
+                  <li className="empty-message">{t('admin.noLocations', '저장된 위치가 없습니다.')}</li>
+                ) : (
+                  locations.map((location, index) => (
+                    <li key={index} className="location-item">
+                      <span className="location-icon">📍</span>
+                      <span className="location-text">{location}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveLocation(index)}
+                        className="btn-remove"
+                        title={t('common.delete', '삭제')}
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  onClick={handleSaveLocations} 
+                  className="btn btn-primary"
+                  disabled={isMutating}
+                >
+                  {isMutating ? t('common.saving', '저장 중...') : t('common.save', '저장')}
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
     </div>
   );
 }
+

@@ -84,7 +84,7 @@
     "connectedAt": "연동일",
     "confirmDeleteIntegration": "이 연동을 삭제하시겠습니까?",
     "noIntegrations": "연동된 계정이 없습니다.",
-    "savedLocations": "저장된 위치 (JSON 배열)",
+    "savedLocations": "저장된 위치",
     "locationsHelp": "위치 목록을 JSON 배열 형식으로 입력하세요.",
     "settingsUpdated": "설정이 업데이트되었습니다.",
     "webhookUpdated": "웹훅 설정이 업데이트되었습니다.",
@@ -92,7 +92,14 @@
     "invalidJSON": "잘못된 JSON 형식입니다.",
     "aiEnabled": "AI 활성화됨",
     "emailEnabled": "이메일 활성화됨",
-    "webhookEnabled": "웹훅 활성화됨"
+    "webhookEnabled": "웹훅 활성화됨",
+    "resetSettings": "초기화",
+    "resetWebhook": "초기화",
+    "confirmReset": "정말 설정을 초기화하시겠습니까?",
+    "settingsDeleted": "설정이 초기화되었습니다.",
+    "webhookDeleted": "웹훅 설정이 삭제되었습니다.",
+    "newLocationPlaceholder": "새 위치 입력...",
+    "noLocations": "저장된 위치가 없습니다."
   },
   "common": {
     "save": "저장",
@@ -105,7 +112,9 @@
     "saving": "저장 중...",
     "deleting": "삭제 중...",
     "success": "성공!",
-    "error": "오류 발생"
+    "error": "오류 발생",
+    "add": "추가",
+    "actions": "작업"
   },
   "nlu": {
     "title": "자연어 입력",
