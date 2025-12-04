@@ -32,7 +32,64 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedDateForCreate, setSelectedDateForCreate] = useState<Date | null>(null);
-  
+  const [selectedEndDateForCreate, setSelectedEndDateForCreate] = useState<Date | null>(null);
+
+  // Month View Drag-to-Create state
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionStart, setSelectionStart] = useState<Date | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<Date | null>(null);
+
+  const handleMonthDateMouseDown = (date: Date, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent text selection
+    setIsSelecting(true);
+    setSelectionStart(date);
+    setSelectionEnd(date);
+  };
+
+  const handleMonthDateMouseEnter = (date: Date) => {
+    if (isSelecting) {
+      setSelectionEnd(date);
+    }
+  };
+
+  const handleMonthDateMouseUp = () => {
+    if (isSelecting && selectionStart && selectionEnd) {
+      setIsSelecting(false);
+      
+      // Determine start and end (user might drag backwards)
+      const start = selectionStart < selectionEnd ? selectionStart : selectionEnd;
+      const end = selectionStart < selectionEnd ? selectionEnd : selectionStart;
+      
+      // Open modal with range
+      setSelectedDateForCreate(start);
+      // We need to pass the end date to the modal somehow. 
+      // Currently EventModal takes initialDate. We might need to update EventModal or 
+      // set a temporary state that EventModal reads.
+      // For now, let's assume we can pass it via a new state or just modify how we open it.
+      // Actually, let's look at EventModal usage.
+      // It uses `initialDate`. 
+      // We can add `initialEndDate` to EventModal props or just use `selectedEvent` for new events?
+      // No, `selectedEvent` is for editing.
+      // Let's add a new state `selectedEndDateForCreate`.
+      setSelectedEndDateForCreate(end);
+      setSelectedEvent(null);
+      setModalOpen(true);
+    }
+    setIsSelecting(false);
+    setSelectionStart(null);
+    setSelectionEnd(null);
+  };
+
+  // ... existing handlers ...
+
+  // Helper to check if a date is in the selection range
+  const isDateSelected = (date: Date) => {
+    if (!isSelecting || !selectionStart || !selectionEnd) return false;
+    const start = selectionStart < selectionEnd ? selectionStart : selectionEnd;
+    const end = selectionStart < selectionEnd ? selectionEnd : selectionStart;
+    return date >= start && date <= end;
+  };
+
   // Quick Add state
   const [quickAdd, setQuickAdd] = useState<{ isOpen: boolean; x: number; y: number; date: Date } | null>(null);
 
@@ -428,7 +485,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
   }).sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
 
   return (
-    <div className="calendar-container">
+    <div className="calendar-container" onMouseUp={handleMonthDateMouseUp}>
       <div className="calendar-layout">
         {/* Sidebar */}
         <div className="calendar-sidebar">
@@ -819,11 +876,15 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                   const dayEvents = filterEventsForDate(events, date);
                   const isToday = date.toDateString() === new Date().toDateString();
                   const isWeekend = date.getDay() === 0 || date.getDay() === 6; // Sunday or Saturday
+                  const isSelected = isDateSelected(date);
+                  
                   return (
                     <div 
                       key={i} 
-                      className={`month-day ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}`}
-                      onClick={() => handleDateClick(date)}
+                      className={`month-day ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${isSelected ? 'selecting' : ''}`}
+                      onMouseDown={(e) => handleMonthDateMouseDown(date, e)}
+                      onMouseEnter={() => handleMonthDateMouseEnter(date)}
+                      onClick={() => !isSelecting && handleDateClick(date)}
                     >
                       <div className="day-number">{date.getDate()}</div>
                       <div className="day-events-compact">
@@ -856,6 +917,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
         onDelete={selectedEvent ? handleDeleteEvent : undefined}
         event={selectedEvent}
         initialDate={selectedDateForCreate || undefined}
+        initialEndDate={selectedEndDateForCreate || undefined}
       />
 
       {quickAdd && (

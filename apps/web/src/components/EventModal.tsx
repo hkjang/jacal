@@ -11,6 +11,7 @@ interface EventModalProps {
   onDelete?: () => void;
   event?: Event | null;
   initialDate?: Date;
+  initialEndDate?: Date;
 }
 
 // Helper function to format date for datetime-local input (preserves local timezone)
@@ -23,7 +24,7 @@ const formatDateForInput = (date: Date): string => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
-const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: EventModalProps) => {
+const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, initialEndDate }: EventModalProps) => {
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
     title: '',
@@ -70,9 +71,30 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
     } else if (initialDate) {
       const start = new Date(initialDate);
       const now = new Date();
-      start.setHours(now.getHours(), now.getMinutes()); // Set to current time
-      const end = new Date(start);
-      end.setHours(start.getHours() + 1); // Set to 1 hour later
+      // Only set time if initialDate doesn't have time (e.g. from month view click)
+      // But initialDate is a Date object, so it always has time.
+      // If it's from month view, it's usually 00:00.
+      // Let's check if it's midnight.
+      if (start.getHours() === 0 && start.getMinutes() === 0) {
+          start.setHours(now.getHours(), now.getMinutes());
+      }
+      
+      let end: Date;
+      if (initialEndDate) {
+        end = new Date(initialEndDate);
+        // If end date is also midnight (from month view selection), set it to end of day or same time as start?
+        // Usually for multi-day, we want it to be all day or preserve time?
+        // If dragging 1st to 3rd. Start 1st 00:00. End 3rd 00:00.
+        // We probably want 1st 09:00 to 3rd 10:00? Or just default times.
+        // Let's set end time to start time + 1 hour if on same day, or same time on end day.
+        if (end.getHours() === 0 && end.getMinutes() === 0) {
+             end.setHours(start.getHours() + 1, start.getMinutes());
+        }
+      } else {
+        end = new Date(start);
+        end.setHours(start.getHours() + 1);
+      }
+
       setFormData({
         title: '',
         description: '',
@@ -84,7 +106,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
       });
       setSelectedTeamId('');
     }
-  }, [event, initialDate]);
+  }, [event, initialDate, initialEndDate]);
 
   // ESC key handler
   useEffect(() => {
