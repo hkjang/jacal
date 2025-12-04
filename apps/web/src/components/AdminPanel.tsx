@@ -27,6 +27,7 @@ import IntegrationsAdmin from './admin/config/IntegrationsAdmin';
 import WebhooksConfig from './admin/config/WebhooksConfig';
 import EmailSettings from './admin/config/EmailSettings';
 import './PageLayouts.css';
+import './admin/AdminPanel.css';
 
 interface AdminPanelProps {
   onExit: () => void;
