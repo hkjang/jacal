@@ -69,9 +69,10 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
       }
     } else if (initialDate) {
       const start = new Date(initialDate);
-      start.setHours(9, 0, 0, 0); // Set to 9 AM local time
+      const now = new Date();
+      start.setHours(now.getHours(), now.getMinutes()); // Set to current time
       const end = new Date(start);
-      end.setHours(10, 0, 0, 0); // Set to 10 AM local time
+      end.setHours(start.getHours() + 1); // Set to 1 hour later
       setFormData({
         title: '',
         description: '',
@@ -108,7 +109,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
 
   if (!isOpen) return null;
 
-  const isTeamEvent = !!event && (event as any).isTeamEvent;
+
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -284,7 +285,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
 
           .modal-header h2 {
             margin: 0;
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 600;
           }
 
@@ -309,24 +310,25 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
           }
 
           .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
           }
 
           .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
             font-weight: 500;
             color: var(--color-text);
+            font-size: 0.875rem;
           }
 
           .form-group input,
           .form-group textarea,
           .form-group select {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.5rem;
             border: 1px solid var(--color-border);
             border-radius: 4px;
-            font-size: 1rem;
+            font-size: 0.875rem;
             font-family: inherit;
             background-color: var(--color-surface);
             color: var(--color-text);
