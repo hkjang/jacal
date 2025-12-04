@@ -4,6 +4,7 @@ import { settingsAPI, calendarAPI, UserSettings, WebhookConfig } from '../lib/ap
 import './Settings.css';
 import './PageLayouts.css';
 import { useTranslation } from 'react-i18next';
+import SettingsGeneral from './settings/SettingsGeneral';
 import SettingsOllama from './settings/SettingsOllama';
 import SettingsEmail from './settings/SettingsEmail';
 import SettingsWebhook from './settings/SettingsWebhook';
@@ -12,7 +13,7 @@ import SettingsLocations from './settings/SettingsLocations';
 
 export default function Settings() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'ollama' | 'webhook' | 'integrations' | 'email' | 'locations'>('ollama');
+  const [activeTab, setActiveTab] = useState<'general' | 'ollama' | 'webhook' | 'integrations' | 'email' | 'locations'>('general');
   const queryClient = useQueryClient();
 
   // Fetch user settings
@@ -116,6 +117,12 @@ export default function Settings() {
 
       <div className="settings-tabs">
         <button
+          className={`settings-tab ${activeTab === 'general' ? 'active' : ''}`}
+          onClick={() => setActiveTab('general')}
+        >
+          {t('settings.tabs.general', '⚙️ 일반')}
+        </button>
+        <button
           className={`settings-tab ${activeTab === 'ollama' ? 'active' : ''}`}
           onClick={() => setActiveTab('ollama')}
         >
@@ -148,6 +155,10 @@ export default function Settings() {
       </div>
 
       <div className="settings-content">
+        {activeTab === 'general' && (
+          <SettingsGeneral />
+        )}
+
         {activeTab === 'ollama' && (
           <SettingsOllama
             settings={settings}

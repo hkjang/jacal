@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Event, eventAPI } from '../lib/api';
+import { Event } from '../lib/api';
 import { adminAPI } from '../lib/adminApi';
 import { calendarAPI } from '../lib/calendarApi';
 import { teamAPI } from '../lib/teamApi';
@@ -30,6 +30,10 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedDateForCreate, setSelectedDateForCreate] = useState<Date | null>(null);
+  
+  // Drag and drop state
+  const [draggedEvent, setDraggedEvent] = useState<Event | null>(null);
+  const [dragOverDate, setDragOverDate] = useState<Date | null>(null);
 
   const { createMutation, updateMutation, deleteMutation } = useEventMutations();
 
@@ -50,9 +54,58 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
 
   const events = Array.isArray(eventsData) ? eventsData : [];
   
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case 'n': // New event
+          if (!e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            setSelectedEvent(null);
+            setSelectedDateForCreate(selectedDate);
+            setModalOpen(true);
+          }
+          break;
+        case 't': // Today
+          e.preventDefault();
+          goToToday();
+          break;
+        case 'w': // Week view
+          e.preventDefault();
+          setViewMode('week');
+          break;
+        case 'm': // Month view
+          e.preventDefault();
+          setViewMode('month');
+          break;
+        case 'arrowleft':
+          if (!modalOpen) {
+            e.preventDefault();
+            navigatePrev();
+          }
+          break;
+        case 'arrowright':
+          if (!modalOpen) {
+            e.preventDefault();
+            navigateNext();
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedDate, modalOpen, goToToday, setViewMode, navigatePrev, navigateNext]);
+
   // Helper function to get event type color class
   const getEventTypeClass = (event: Event) => {
     if ((event as any).isTeamEvent) return 'event-type-team';
+    if ((event as any).isFocusTime) return 'event-type-focus';
     
     switch (event.eventType) {
       case 'WORK': return 'event-type-work';
@@ -62,6 +115,77 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
       default: return 'event-type-other';
     }
   };
+
+  // Drag and drop handlers
+  const handleDragStart = useCallback((event: Event, e: React.DragEvent) => {
+    e.stopPropagation();
+    setDraggedEvent(event);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', event.id);
+    // Add dragging class to the element
+    (e.target as HTMLElement).classList.add('dragging');
+  }, []);
+
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    (e.target as HTMLElement).classList.remove('dragging');
+    setDraggedEvent(null);
+    setDragOverDate(null);
+  }, []);
+
+  const handleDragOver = useCallback((date: Date, e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!dragOverDate || dragOverDate.toDateString() !== date.toDateString()) {
+      setDragOverDate(date);
+    }
+  }, [dragOverDate]);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverDate(null);
+  }, []);
+
+  const handleDrop = useCallback(async (targetDate: Date, e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!draggedEvent) return;
+    
+    try {
+      const originalStart = new Date(draggedEvent.startAt);
+      const originalEnd = new Date(draggedEvent.endAt);
+      const duration = originalEnd.getTime() - originalStart.getTime();
+      
+      // Calculate new start time keeping the same time of day
+      const newStart = new Date(targetDate);
+      newStart.setHours(originalStart.getHours(), originalStart.getMinutes(), 0, 0);
+      
+      const newEnd = new Date(newStart.getTime() + duration);
+      
+      // Update the event
+      if ((draggedEvent as any).isTeamEvent) {
+        await teamAPI.updateEvent(draggedEvent.id, {
+          startAt: newStart.toISOString(),
+          endAt: newEnd.toISOString(),
+        });
+      } else {
+        await updateMutation.mutateAsync({
+          id: draggedEvent.id,
+          data: {
+            startAt: newStart.toISOString(),
+            endAt: newEnd.toISOString(),
+          }
+        });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+    } catch (error) {
+      console.error('Failed to move event:', error);
+      alert(t('calendar.moveError', '일정 이동에 실패했습니다.'));
+    } finally {
+      setDraggedEvent(null);
+      setDragOverDate(null);
+    }
+  }, [draggedEvent, updateMutation, queryClient, t]);
 
   const handleDateClick = (date: Date) => {
     setSelectedDateForCreate(date);
@@ -165,20 +289,27 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
             {weekDates.map((date, i) => {
               const dayEvents = filterEventsForDate(events, date);
               const isToday = date.toDateString() === new Date().toDateString();
-              const isWeekend = date.getDay() === 0 || date.getDay() === 6; // Sunday or Saturday
+              const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+              const isDragOver = dragOverDate?.toDateString() === date.toDateString();
               return (
                 <div 
                   key={i} 
-                  className={`week-day ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}`}
+                  className={`week-day ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${isDragOver ? 'drag-over' : ''}`}
                   onClick={() => handleDateClick(date)}
+                  onDragOver={(e) => handleDragOver(date, e)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(date, e)}
                 >
                   <div className="day-number">{date.getDate()}</div>
                   <div className="day-events">
                     {dayEvents.map(event => (
                       <div 
                         key={event.id} 
-                        className={`calendar-event ${getEventTypeClass(event)}`}
+                        className={`calendar-event ${getEventTypeClass(event)} ${draggedEvent?.id === event.id ? 'dragging' : ''}`}
                         onClick={(e) => handleEventClick(event, e)}
+                        draggable
+                        onDragStart={(e) => handleDragStart(event, e)}
+                        onDragEnd={handleDragEnd}
                       >
                         <div className="event-time">
                           {new Date(event.startAt).toLocaleTimeString('ko-KR', { 

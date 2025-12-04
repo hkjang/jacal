@@ -55,7 +55,7 @@
 }
 
 .week-day {
-  background: white;
+  background: var(--color-surface);
   padding: 0.75rem;
   min-height: 150px;
   cursor: pointer;
@@ -249,7 +249,7 @@
 }
 
 .month-day {
-  background: white;
+  background: var(--color-surface);
   padding: 0.5rem;
   min-height: 100px;
   cursor: pointer;
@@ -380,4 +380,156 @@
     min-height: 120px;
     padding: 0.5rem;
   }
+}
+
+/* Focus Time event styling */
+.event-type-focus {
+  background: linear-gradient(
+    135deg,
+    hsla(200, 85%, 55%, 0.15) 0%,
+    hsla(200, 85%, 55%, 0.1) 100%
+  ) !important;
+  border-left: 3px solid hsl(200, 85%, 55%) !important;
+  position: relative;
+}
+
+.event-type-focus::before {
+  content: '🎯';
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.65rem;
+}
+
+.event-type-focus:hover {
+  background: linear-gradient(
+    135deg,
+    hsla(200, 85%, 55%, 0.2) 0%,
+    hsla(200, 85%, 55%, 0.15) 100%
+  ) !important;
+}
+
+.event-type-focus .event-time {
+  color: hsl(200, 85%, 45%);
+}
+
+/* Drag and Drop Styles */
+.week-day.drag-over,
+.month-day.drag-over {
+  background: hsla(220, 90%, 56%, 0.1) !important;
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+
+.calendar-event.dragging,
+.calendar-event-compact.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+
+.calendar-event[draggable="true"],
+.calendar-event-compact[draggable="true"] {
+  cursor: grab;
+}
+
+.calendar-event[draggable="true"]:active,
+.calendar-event-compact[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Keyboard shortcut hint */
+.calendar-shortcuts-hint {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  box-shadow: var(--shadow-md);
+  z-index: 100;
+}
+
+.calendar-shortcuts-hint kbd {
+  background: var(--color-bg);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  font-family: inherit;
+  font-weight: 500;
+  margin: 0 0.25rem;
+}
+
+/* Quick add button on hover */
+.week-day::after,
+.month-day::after {
+  content: '+';
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 24px;
+  height: 24px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 300;
+  opacity: 0;
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.week-day:hover::after,
+.month-day:hover::after {
+  opacity: 0.8;
+}
+
+.week-day:hover::after:hover,
+.month-day:hover::after:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Dark mode specific adjustments */
+[data-theme="dark"] .week-day,
+[data-theme="dark"] .month-day {
+  background: var(--color-surface);
+}
+
+[data-theme="dark"] .week-day:hover,
+[data-theme="dark"] .month-day:hover {
+  background: var(--color-surface-hover);
+}
+
+[data-theme="dark"] .week-day.weekend,
+[data-theme="dark"] .month-day.weekend {
+  background: hsl(225, 20%, 14%);
+}
+
+[data-theme="dark"] .month-day.other-month {
+  background: hsl(225, 20%, 12%);
+}
+
+[data-theme="dark"] .week-day.today,
+[data-theme="dark"] .month-day.today {
+  background: linear-gradient(
+    135deg,
+    hsl(45, 50%, 20%) 0%,
+    hsl(45, 40%, 18%) 100%
+  );
+  box-shadow: inset 0 0 0 2px hsl(45, 70%, 45%);
+}
+
+[data-theme="dark"] .today .day-number {
+  background: hsl(45, 70%, 45%);
+}
+
+[data-theme="dark"] .week-day-header,
+[data-theme="dark"] .month-day-header {
+  background: var(--color-surface);
+  color: var(--color-text);
 }

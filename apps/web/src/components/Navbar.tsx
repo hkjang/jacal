@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { searchAPI, Task, Event } from '../lib/api';
 import { ViewType } from '../types/navigation';
+import { useTheme } from '../hooks/useTheme';
 import './Navigation.css';
 
 interface NavbarProps {
@@ -14,6 +15,7 @@ interface NavbarProps {
 
 export default function Navbar({ userEmail, onLogout, onLanguageToggle, currentLanguage, onViewChange }: NavbarProps) {
   const { t } = useTranslation();
+  const { effectiveTheme, toggleTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Search state
@@ -140,6 +142,13 @@ export default function Navbar({ userEmail, onLogout, onLanguageToggle, currentL
         </div>
 
         <div className="navbar-right">
+          <button
+            onClick={toggleTheme}
+            className="navbar-btn"
+            title={effectiveTheme === 'dark' ? t('settings.theme.light', '라이트 모드') : t('settings.theme.dark', '다크 모드')}
+          >
+            {effectiveTheme === 'dark' ? '☀️' : '🌙'}
+          </button>
           <button
             onClick={onLanguageToggle}
             className="navbar-btn"

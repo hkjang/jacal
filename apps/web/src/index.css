@@ -1,21 +1,47 @@
-:root {
+:root,
+[data-theme="light"] {
   /* Colors - Modern productivity app palette */
   --color-primary: hsl(220, 90%, 56%);
   --color-primary-hover: hsl(220, 90%, 50%);
+  --color-primary-light: hsl(220, 90%, 95%);
   --color-secondary: hsl(280, 70%, 60%);
   --color-accent: hsl(350, 85%, 60%);
   
   --color-bg: hsl(220, 20%, 98%);
   --color-surface: hsl(0, 0%, 100%);
   --color-surface-hover: hsl(220, 20%, 96%);
+  --color-surface-elevated: hsl(0, 0%, 100%);
   
   --color-text: hsl(220, 20%, 20%);
   --color-text-secondary: hsl(220, 15%, 50%);
+  --color-text-muted: hsl(220, 15%, 65%);
   --color-border: hsl(220, 20%, 90%);
+  --color-border-light: hsl(220, 20%, 95%);
   
-  --color-success: hsl(140, 70%, 50%);
-  --color-warning: hsl(40, 90%, 60%);
+  --color-success: hsl(140, 70%, 45%);
+  --color-success-light: hsl(140, 70%, 92%);
+  --color-warning: hsl(40, 90%, 55%);
+  --color-warning-light: hsl(40, 90%, 92%);
   --color-error: hsl(0, 80%, 60%);
+  --color-error-light: hsl(0, 80%, 95%);
+  --color-info: hsl(200, 80%, 50%);
+  --color-info-light: hsl(200, 80%, 92%);
+  
+  /* Shadows - Light mode */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+  
+  /* Modal backdrop */
+  --modal-backdrop: rgba(0, 0, 0, 0.5);
+  
+  /* Scrollbar */
+  --scrollbar-bg: hsl(220, 20%, 95%);
+  --scrollbar-thumb: hsl(220, 15%, 75%);
+  
+  /* Focus ring */
+  --focus-ring: hsla(220, 90%, 56%, 0.3);
   
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -40,12 +66,46 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --color-primary: hsl(220, 85%, 65%);
+  --color-primary-hover: hsl(220, 85%, 70%);
+  --color-primary-light: hsl(220, 50%, 25%);
+  --color-secondary: hsl(280, 60%, 65%);
+  --color-accent: hsl(350, 75%, 65%);
   
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+  --color-bg: hsl(225, 25%, 12%);
+  --color-surface: hsl(225, 20%, 16%);
+  --color-surface-hover: hsl(225, 20%, 20%);
+  --color-surface-elevated: hsl(225, 20%, 20%);
+  
+  --color-text: hsl(220, 15%, 90%);
+  --color-text-secondary: hsl(220, 10%, 65%);
+  --color-text-muted: hsl(220, 10%, 50%);
+  --color-border: hsl(225, 15%, 25%);
+  --color-border-light: hsl(225, 15%, 20%);
+  
+  --color-success: hsl(140, 60%, 55%);
+  --color-success-light: hsl(140, 40%, 20%);
+  --color-warning: hsl(40, 75%, 55%);
+  --color-warning-light: hsl(40, 40%, 20%);
+  --color-error: hsl(0, 70%, 60%);
+  --color-error-light: hsl(0, 40%, 20%);
+  --color-info: hsl(200, 70%, 55%);
+  --color-info-light: hsl(200, 40%, 20%);
+  
+  /* Shadows - Dark mode (subtler, using elevation) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5);
+  
+  --modal-backdrop: rgba(0, 0, 0, 0.7);
+  --scrollbar-bg: hsl(225, 20%, 15%);
+  --scrollbar-thumb: hsl(225, 15%, 35%);
+  --focus-ring: hsla(220, 85%, 65%, 0.4);
 }
 
 * {
@@ -198,7 +258,7 @@ input:focus, textarea:focus, select:focus {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--modal-backdrop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -214,4 +274,60 @@ input:focus, textarea:focus, select:focus {
   position: relative;
   max-height: 90vh;
   overflow-y: auto;
+}
+
+/* Theme transition - smooth color changes */
+html {
+  color-scheme: light dark;
+}
+
+html,
+html * {
+  transition: background-color 0.2s ease, 
+              border-color 0.2s ease,
+              box-shadow 0.2s ease;
+}
+
+/* Disable transitions on page load to prevent flash */
+html.no-transition,
+html.no-transition * {
+  transition: none !important;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-bg);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+}
+
+/* Focus visible for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Selection colors */
+::selection {
+  background: var(--color-primary);
+  color: white;
 }
