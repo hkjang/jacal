@@ -29,6 +29,11 @@
   margin-top: 1.5rem;
 }
 
+/* HomePage Time Analytics */
+.home-analytics {
+  margin: 1.5rem 0;
+}
+
 .events-section,
 .tasks-section {
   background: var(--color-surface);

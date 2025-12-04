@@ -4,6 +4,7 @@ import { eventAPI, taskAPI, Event, Task } from '../lib/api';
 import { useNaturalInput } from '../hooks/useNaturalInput';
 import { useScheduler } from '../hooks/useScheduler';
 import { useFocus } from '../hooks/useFocus';
+import TimeAnalytics from './TimeAnalytics';
 import './PageLayouts.css';
 
 export default function HomePage() {
@@ -64,6 +65,9 @@ export default function HomePage() {
           </button>
         </div>
       </section>
+
+      {/* Time Analytics Dashboard */}
+      <TimeAnalytics className="home-analytics" />
 
       <div className="content-grid">
         <section className="events-section">
@@ -140,3 +144,4 @@ export default function HomePage() {
     </main>
   );
 }
+

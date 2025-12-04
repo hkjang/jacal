@@ -32,6 +32,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
     endAt: '',
     location: '',
     eventType: 'OTHER' as EventType,
+    isFocusTime: false,
   });
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
 
@@ -58,6 +59,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
         endAt: formatDateForInput(new Date(event.endAt)),
         location: event.location || '',
         eventType: event.eventType || 'OTHER',
+        isFocusTime: (event as any).isFocusTime || false,
       });
       // If it's a team event, set the team ID
       if ((event as any).isTeamEvent && (event as any).teamId) {
@@ -77,6 +79,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
         endAt: formatDateForInput(end),
         location: '',
         eventType: 'OTHER',
+        isFocusTime: false,
       });
       setSelectedTeamId('');
     }
@@ -208,6 +211,24 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
             </div>
           </div>
 
+          {/* Focus Time Toggle */}
+          {!selectedTeamId && (
+            <div className="focus-time-toggle">
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={formData.isFocusTime}
+                  onChange={(e) => setFormData({ ...formData, isFocusTime: e.target.checked })}
+                />
+                <span className="toggle-icon">🎯</span>
+                <span className="toggle-text">{t('event.focusTime', '집중 시간')}</span>
+              </label>
+              {formData.isFocusTime && (
+                <p className="toggle-hint">{t('event.focusTimeHint', '방해받지 않는 집중 작업 시간으로 표시됩니다.')}</p>
+              )}
+            </div>
+          )}
+
           <div className="modal-actions">
             {event && onDelete && (
               <button
@@ -236,7 +257,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: var(--modal-backdrop);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -244,13 +265,13 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
           }
 
           .modal-content {
-            background: white;
+            background: var(--color-surface);
             border-radius: 8px;
             width: 90%;
             max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            box-shadow: var(--shadow-xl);
           }
 
           .modal-header {
@@ -307,7 +328,8 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
             border-radius: 4px;
             font-size: 1rem;
             font-family: inherit;
-            background-color: white;
+            background-color: var(--color-surface);
+            color: var(--color-text);
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
           }
 
@@ -316,7 +338,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
           .form-group select:focus {
             outline: none;
             border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px hsla(220, 90%, 56%, 0.1);
+            box-shadow: 0 0 0 3px var(--focus-ring);
           }
 
           .form-group select {
@@ -335,6 +357,44 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
             gap: 1rem;
           }
 
+          /* Focus Time Toggle */
+          .focus-time-toggle {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: var(--color-bg);
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+          }
+
+          .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            font-weight: 500;
+          }
+
+          .toggle-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--color-primary);
+          }
+
+          .toggle-icon {
+            font-size: 1.25rem;
+          }
+
+          .toggle-text {
+            color: var(--color-text);
+          }
+
+          .toggle-hint {
+            margin: 0.5rem 0 0 2rem;
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+          }
+
           .modal-actions {
             display: flex;
             justify-content: space-between;
@@ -344,12 +404,12 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
           }
 
           .btn-danger {
-            background: #dc3545;
+            background: var(--color-error);
             color: white;
           }
 
           .btn-danger:hover {
-            background: #c82333;
+            background: hsl(0, 70%, 50%);
           }
 
           .ml-auto {
@@ -362,3 +422,4 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate }: E
 };
 
 export default EventModal;
+
