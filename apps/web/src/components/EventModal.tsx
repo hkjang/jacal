@@ -9,10 +9,28 @@ interface EventModalProps {
   onClose: () => void;
   onSave: (event: Partial<Event>, teamId?: string) => void;
   onDelete?: () => void;
+  onDuplicate?: (event: Event) => void;
   event?: Event | null;
   initialDate?: Date;
   initialEndDate?: Date;
 }
+
+// Reminder options in minutes before event
+const REMINDER_OPTIONS = [
+  { value: 10, label: '10분 전' },
+  { value: 30, label: '30분 전' },
+  { value: 60, label: '1시간 전' },
+  { value: 1440, label: '1일 전' },
+];
+
+// Recurrence options
+const RECURRENCE_OPTIONS = [
+  { value: '', label: '반복 안 함' },
+  { value: 'DAILY', label: '매일' },
+  { value: 'WEEKLY', label: '매주' },
+  { value: 'MONTHLY', label: '매월' },
+  { value: 'YEARLY', label: '매년' },
+];
 
 // Helper function to format date for datetime-local input (preserves local timezone)
 const formatDateForInput = (date: Date): string => {
@@ -24,16 +42,49 @@ const formatDateForInput = (date: Date): string => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
-const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, initialEndDate }: EventModalProps) => {
+// Helper function to format date for date input (YYYY-MM-DD)
+const formatDateOnly = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Helper to convert recurrence type to RRULE format
+const toRRule = (type: string): string => {
+  switch (type) {
+    case 'DAILY': return 'FREQ=DAILY';
+    case 'WEEKLY': return 'FREQ=WEEKLY';
+    case 'MONTHLY': return 'FREQ=MONTHLY';
+    case 'YEARLY': return 'FREQ=YEARLY';
+    default: return '';
+  }
+};
+
+// Helper to parse RRULE to recurrence type
+const fromRRule = (rrule: string): string => {
+  if (rrule.includes('FREQ=DAILY')) return 'DAILY';
+  if (rrule.includes('FREQ=WEEKLY')) return 'WEEKLY';
+  if (rrule.includes('FREQ=MONTHLY')) return 'MONTHLY';
+  if (rrule.includes('FREQ=YEARLY')) return 'YEARLY';
+  return '';
+};
+
+const EventModal = ({ isOpen, onClose, onSave, onDelete, onDuplicate, event, initialDate, initialEndDate }: EventModalProps) => {
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     startAt: '',
     endAt: '',
+    startDate: '',
+    endDate: '',
     location: '',
     eventType: 'OTHER' as EventType,
     isFocusTime: false,
+    isAllDay: false,
+    recurrence: '',
+    reminderMinutes: [] as number[],
   });
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
 
@@ -53,14 +104,34 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, ini
 
   useEffect(() => {
     if (event) {
+      const startDate = new Date(event.startAt);
+      const endDate = new Date(event.endAt);
+      
+      // Check if event has reminders and extract minutes
+      const reminderMinutes: number[] = [];
+      if (event.reminders && event.reminders.length > 0) {
+        event.reminders.forEach(r => {
+          const notifyAt = new Date(r.notifyAt);
+          const diffMinutes = Math.round((startDate.getTime() - notifyAt.getTime()) / (1000 * 60));
+          if (REMINDER_OPTIONS.some(opt => opt.value === diffMinutes)) {
+            reminderMinutes.push(diffMinutes);
+          }
+        });
+      }
+
       setFormData({
         title: event.title,
         description: event.description || '',
-        startAt: formatDateForInput(new Date(event.startAt)),
-        endAt: formatDateForInput(new Date(event.endAt)),
+        startAt: formatDateForInput(startDate),
+        endAt: formatDateForInput(endDate),
+        startDate: formatDateOnly(startDate),
+        endDate: formatDateOnly(endDate),
         location: event.location || '',
         eventType: event.eventType || 'OTHER',
-        isFocusTime: (event as any).isFocusTime || false,
+        isFocusTime: event.isFocusTime || false,
+        isAllDay: event.isAllDay || false,
+        recurrence: event.recurringRule ? fromRRule(event.recurringRule.rruleText) : '',
+        reminderMinutes,
       });
       // If it's a team event, set the team ID
       if ((event as any).isTeamEvent && (event as any).teamId) {
@@ -72,9 +143,6 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, ini
       const start = new Date(initialDate);
       const now = new Date();
       // Only set time if initialDate doesn't have time (e.g. from month view click)
-      // But initialDate is a Date object, so it always has time.
-      // If it's from month view, it's usually 00:00.
-      // Let's check if it's midnight.
       if (start.getHours() === 0 && start.getMinutes() === 0) {
           start.setHours(now.getHours(), now.getMinutes());
       }
@@ -82,11 +150,6 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, ini
       let end: Date;
       if (initialEndDate) {
         end = new Date(initialEndDate);
-        // If end date is also midnight (from month view selection), set it to end of day or same time as start?
-        // Usually for multi-day, we want it to be all day or preserve time?
-        // If dragging 1st to 3rd. Start 1st 00:00. End 3rd 00:00.
-        // We probably want 1st 09:00 to 3rd 10:00? Or just default times.
-        // Let's set end time to start time + 1 hour if on same day, or same time on end day.
         if (end.getHours() === 0 && end.getMinutes() === 0) {
              end.setHours(start.getHours() + 1, start.getMinutes());
         }
@@ -100,9 +163,14 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, ini
         description: '',
         startAt: formatDateForInput(start),
         endAt: formatDateForInput(end),
+        startDate: formatDateOnly(start),
+        endDate: formatDateOnly(end),
         location: '',
         eventType: 'OTHER',
         isFocusTime: false,
+        isAllDay: false,
+        recurrence: '',
+        reminderMinutes: [],
       });
       setSelectedTeamId('');
     }
@@ -120,18 +188,88 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, ini
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  const handleAllDayChange = (checked: boolean) => {
+    if (checked) {
+      // When switching to all-day, set times to full day
+      const startDate = formData.startAt.split('T')[0];
+      const endDate = formData.endAt.split('T')[0];
+      setFormData({
+        ...formData,
+        isAllDay: true,
+        startDate: startDate,
+        endDate: endDate,
+      });
+    } else {
+      // When switching from all-day, restore times
+      const now = new Date();
+      const startDateTime = `${formData.startDate}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const endHour = (now.getHours() + 1) % 24;
+      const endDateTime = `${formData.endDate}T${String(endHour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      setFormData({
+        ...formData,
+        isAllDay: false,
+        startAt: startDateTime,
+        endAt: endDateTime,
+      });
+    }
+  };
+
+  const toggleReminder = (minutes: number) => {
+    setFormData(prev => ({
+      ...prev,
+      reminderMinutes: prev.reminderMinutes.includes(minutes)
+        ? prev.reminderMinutes.filter(m => m !== minutes)
+        : [...prev.reminderMinutes, minutes],
+    }));
+  };
+
+  const handleDuplicate = () => {
+    if (event && onDuplicate) {
+      onDuplicate(event);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    let startAt: Date;
+    let endAt: Date;
+    
+    if (formData.isAllDay) {
+      // For all-day events, set start to 00:00 and end to 23:59
+      startAt = new Date(formData.startDate + 'T00:00:00');
+      endAt = new Date(formData.endDate + 'T23:59:59');
+    } else {
+      startAt = new Date(formData.startAt);
+      endAt = new Date(formData.endAt);
+    }
+
+    // Build reminders array
+    const reminders = formData.reminderMinutes.map(minutes => ({
+      notifyAt: new Date(startAt.getTime() - minutes * 60 * 1000).toISOString(),
+      channel: 'push',
+    }));
+
+    // Build recurring rule
+    const recurringRule = formData.recurrence ? {
+      rruleText: toRRule(formData.recurrence),
+    } : undefined;
+
     onSave({
-      ...formData,
-      startAt: new Date(formData.startAt),
-      endAt: new Date(formData.endAt),
-    } as any, selectedTeamId || undefined);
+      title: formData.title,
+      description: formData.description,
+      startAt: startAt as any,
+      endAt: endAt as any,
+      location: formData.location,
+      eventType: formData.eventType,
+      isFocusTime: formData.isFocusTime,
+      isAllDay: formData.isAllDay,
+      reminders: reminders as any,
+      recurringRule: recurringRule as any,
+    }, selectedTeamId || undefined);
   };
 
   if (!isOpen) return null;
-
-
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -172,29 +310,95 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, ini
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
+              rows={2}
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>{t('event.start', '시작 시간')} *</label>
+          {/* All-Day Toggle */}
+          <div className="all-day-toggle">
+            <label className="toggle-label">
               <input
-                type="datetime-local"
-                value={formData.startAt}
-                onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
-                required
+                type="checkbox"
+                checked={formData.isAllDay}
+                onChange={(e) => handleAllDayChange(e.target.checked)}
               />
-            </div>
+              <span className="toggle-icon">📅</span>
+              <span className="toggle-text">{t('event.allDay', '종일')}</span>
+            </label>
+          </div>
 
-            <div className="form-group">
-              <label>{t('event.end', '종료 시간')} *</label>
-              <input
-                type="datetime-local"
-                value={formData.endAt}
-                onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
-                required
-              />
+          {/* Date/Time inputs */}
+          {formData.isAllDay ? (
+            <div className="form-row">
+              <div className="form-group">
+                <label>{t('event.startDate', '시작 날짜')} *</label>
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>{t('event.endDate', '종료 날짜')} *</label>
+                <input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="form-row">
+              <div className="form-group">
+                <label>{t('event.start', '시작 시간')} *</label>
+                <input
+                  type="datetime-local"
+                  value={formData.startAt}
+                  onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>{t('event.end', '종료 시간')} *</label>
+                <input
+                  type="datetime-local"
+                  value={formData.endAt}
+                  onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Recurrence Selector */}
+          <div className="form-group">
+            <label>🔄 {t('event.recurrence', '반복')}</label>
+            <select
+              value={formData.recurrence}
+              onChange={(e) => setFormData({ ...formData, recurrence: e.target.value })}
+            >
+              {RECURRENCE_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Reminder Selector */}
+          <div className="form-group">
+            <label>🔔 {t('event.reminders', '알림')}</label>
+            <div className="reminder-options">
+              {REMINDER_OPTIONS.map(opt => (
+                <label key={opt.value} className="reminder-chip">
+                  <input
+                    type="checkbox"
+                    checked={formData.reminderMinutes.includes(opt.value)}
+                    onChange={() => toggleReminder(opt.value)}
+                  />
+                  <span>{opt.label}</span>
+                </label>
+              ))}
             </div>
           </div>
 
@@ -253,15 +457,26 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, ini
           )}
 
           <div className="modal-actions">
-            {event && onDelete && (
-              <button
-                type="button"
-                onClick={onDelete}
-                className="btn btn-danger"
-              >
-                {t('event.delete', '삭제')}
-              </button>
-            )}
+            <div className="flex gap-sm">
+              {event && onDelete && (
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  className="btn btn-danger"
+                >
+                  {t('event.delete', '삭제')}
+                </button>
+              )}
+              {event && onDuplicate && (
+                <button
+                  type="button"
+                  onClick={handleDuplicate}
+                  className="btn btn-secondary"
+                >
+                  📋 {t('event.duplicate', '복제')}
+                </button>
+              )}
+            </div>
             <div className="flex gap-sm ml-auto">
               <button type="button" onClick={onClose} className="btn btn-secondary">
                 {t('common.cancel', '취소')}
@@ -301,7 +516,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, ini
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1.5rem;
+            padding: 1.25rem 1.5rem;
             border-bottom: 1px solid var(--color-border);
           }
 
@@ -328,7 +543,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, ini
           }
 
           .modal-form {
-            padding: 1.5rem;
+            padding: 1.25rem 1.5rem;
           }
 
           .form-group {
@@ -381,10 +596,19 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, ini
             gap: 1rem;
           }
 
+          /* All-Day Toggle */
+          .all-day-toggle {
+            margin: 0.5rem 0 0.75rem;
+            padding: 0.75rem;
+            background: var(--color-bg);
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+          }
+
           /* Focus Time Toggle */
           .focus-time-toggle {
-            margin: 1rem 0;
-            padding: 1rem;
+            margin: 0.75rem 0;
+            padding: 0.75rem;
             background: var(--color-bg);
             border-radius: 8px;
             border: 1px solid var(--color-border);
@@ -419,6 +643,43 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, ini
             color: var(--color-text-secondary);
           }
 
+          /* Reminder Options */
+          .reminder-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+          }
+
+          .reminder-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+          }
+
+          .reminder-chip:hover {
+            border-color: var(--color-primary);
+          }
+
+          .reminder-chip input {
+            width: 14px;
+            height: 14px;
+            margin: 0;
+            accent-color: var(--color-primary);
+          }
+
+          .reminder-chip:has(input:checked) {
+            background: var(--color-primary-light, rgba(79, 70, 229, 0.1));
+            border-color: var(--color-primary);
+          }
+
           .modal-actions {
             display: flex;
             justify-content: space-between;
@@ -446,4 +707,3 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, initialDate, ini
 };
 
 export default EventModal;
-

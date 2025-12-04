@@ -97,6 +97,8 @@ model Event {
   endAt           DateTime
   location        String?
   eventType       EventType @default(OTHER)
+  isAllDay        Boolean   @default(false)
+  isFocusTime     Boolean   @default(false)
   sourceCalendar  String?   // google, outlook, caldav, manual
   externalId      String?   // ID from external calendar
   createdAt       DateTime  @default(now())

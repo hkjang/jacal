@@ -40,9 +40,19 @@ export interface Event {
   endAt: string;
   location?: string;
   eventType?: EventType;
+  isAllDay?: boolean;
+  isFocusTime?: boolean;
+  recurringRule?: RecurringRule;
   sourceCalendar?: string;
   createdAt: string;
   reminders?: Reminder[];
+}
+
+export interface RecurringRule {
+  id: string;
+  entityType: string;
+  entityId: string;
+  rruleText: string;
 }
 
 // Axios instance with auth token
@@ -99,6 +109,10 @@ export const eventAPI = {
     const { data } = await api.get('/events');
     return data;
   },
+  getById: async (id: string): Promise<Event> => {
+    const { data } = await api.get(`/events/${id}`);
+    return data;
+  },
   create: async (event: Partial<Event>): Promise<Event> => {
     const { data } = await api.post('/events', event);
     return data;
@@ -109,6 +123,10 @@ export const eventAPI = {
   },
   delete: async (id: string): Promise<void> => {
     await api.delete(`/events/${id}`);
+  },
+  duplicate: async (id: string): Promise<Event> => {
+    const { data } = await api.post(`/events/${id}/duplicate`);
+    return data;
   },
 };
 

@@ -953,6 +953,27 @@
   margin-top: 0.125rem;
 }
 
+/* Event Indicators */
+.event-indicators {
+  font-size: 0.6rem;
+  margin-left: 0.25rem;
+  opacity: 0.8;
+}
+
+.time-grid-event .event-indicators {
+  font-size: 0.55rem;
+}
+
+.calendar-event-compact .event-indicators {
+  display: none; /* Hide on compact view for space */
+}
+
+/* All-day events styling */
+.multi-day-event .event-indicators {
+  font-size: 0.6rem;
+  margin-left: 0.25rem;
+}
+
 @media (max-width: 1024px) {
   .calendar-sidebar {
     display: none;

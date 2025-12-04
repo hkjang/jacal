@@ -245,6 +245,15 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
     }
   };
 
+  // Helper function to get event indicators (icons)
+  const getEventIndicators = (event: Event) => {
+    const indicators: string[] = [];
+    if (event.isAllDay) indicators.push('📅');
+    if (event.recurringRule) indicators.push('🔄');
+    if (event.reminders && event.reminders.length > 0) indicators.push('🔔');
+    return indicators.join(' ');
+  };
+
   // Drag and drop handlers
   const handleDragStart = useCallback((event: Event, e: React.DragEvent) => {
     e.stopPropagation();
@@ -444,6 +453,23 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
         console.error('Failed to delete event:', error);
         alert(t('calendar.deleteError', '일정 삭제에 실패했습니다.'));
       }
+    }
+  };
+
+  // Duplicate event handler
+  const handleDuplicateEvent = async (eventToDuplicate: Event) => {
+    try {
+      setModalOpen(false);
+      setSelectedEvent(null);
+      
+      // Use backend duplicate endpoint
+      const { eventAPI } = await import('../lib/api');
+      await eventAPI.duplicate(eventToDuplicate.id);
+      
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+    } catch (error) {
+      console.error('Failed to duplicate event:', error);
+      alert(t('calendar.duplicateError', '일정 복제에 실패했습니다.'));
     }
   };
 
@@ -833,7 +859,12 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                             onDragStart={(e) => handleDragStart(event, e)}
                             onDragEnd={handleDragEnd}
                           >
-                            <div className="event-title">{event.title}</div>
+                            <div className="event-title">
+                              {event.title}
+                              {getEventIndicators(event) && (
+                                <span className="event-indicators"> {getEventIndicators(event)}</span>
+                              )}
+                            </div>
                             <div className="event-time">
                               {start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                               {' - '}
@@ -893,8 +924,12 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                             key={event.id} 
                             className={`calendar-event-compact ${getEventTypeClass(event)}`}
                             onClick={(e) => handleEventClick(event, e)}
+                            title={`${event.title} ${getEventIndicators(event)}`}
                           >
                             {event.title}
+                            {getEventIndicators(event) && (
+                              <span className="event-indicators"> {getEventIndicators(event)}</span>
+                            )}
                           </div>
                         ))}
                         {dayEvents.length > 3 && (
@@ -915,6 +950,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
         onClose={() => setModalOpen(false)}
         onSave={handleSaveEvent}
         onDelete={selectedEvent ? handleDeleteEvent : undefined}
+        onDuplicate={selectedEvent ? handleDuplicateEvent : undefined}
         event={selectedEvent}
         initialDate={selectedDateForCreate || undefined}
         initialEndDate={selectedEndDateForCreate || undefined}
