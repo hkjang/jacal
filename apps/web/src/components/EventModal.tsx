@@ -250,10 +250,10 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, onDuplicate, event, ini
       channel: 'push',
     }));
 
-    // Build recurring rule
+    // Build recurring rule - use null to indicate deletion of existing rule
     const recurringRule = formData.recurrence ? {
       rruleText: toRRule(formData.recurrence),
-    } : undefined;
+    } : null;
 
     // Debug: Log what we're sending
     console.log('[EventModal] Saving event with recurrence:', formData.recurrence, 'recurringRule:', recurringRule);

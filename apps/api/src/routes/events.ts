@@ -185,14 +185,14 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
       include: { tags: true },
     });
 
-    // Update recurring rule
+    // Update recurring rule (null means delete, undefined means no change)
     if (recurringRule !== undefined) {
       // Delete existing recurring rule
       await prisma.recurringRule.deleteMany({
         where: { eventId: id },
       });
 
-      // Create new recurring rule if provided
+      // Create new recurring rule if provided (not null)
       if (recurringRule && recurringRule.rruleText) {
         await prisma.recurringRule.create({
           data: {
