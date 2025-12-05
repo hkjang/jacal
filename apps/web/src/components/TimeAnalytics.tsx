@@ -103,7 +103,7 @@ const TimeAnalytics = ({ className }: TimeAnalyticsProps) => {
         <>
           {/* Progress Bar */}
           <div className="analytics-bar">
-            {breakdown.map((item, idx) => (
+            {breakdown.map((item) => (
               <div
                 key={item.type}
                 className="bar-segment"

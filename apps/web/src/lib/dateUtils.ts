@@ -49,28 +49,22 @@ export const filterEventsForDate = (events: any[] | undefined, date: Date) => {
     return [];
   }
   
-  const filtered = events.filter(event => {
-    const eventDate = new Date(event.startAt);
-    const eventDateStr = eventDate.toDateString();
-    const targetDateStr = date.toDateString();
-    const matches = eventDateStr === targetDateStr;
-    
-    if (matches) {
-      console.log('✅ Event matches date:', {
-        eventTitle: event.title,
-        eventStartAt: event.startAt,
-        eventDate: eventDateStr,
-        targetDate: targetDateStr
-      });
-    }
-    
-    return matches;
-  });
+  // Normalize target date to start of day for comparison
+  const targetStart = new Date(date);
+  targetStart.setHours(0, 0, 0, 0);
+  const targetEnd = new Date(date);
+  targetEnd.setHours(23, 59, 59, 999);
   
-  console.log(`🔍 filterEventsForDate for ${date.toDateString()}:`, {
-    totalEvents: events.length,
-    filteredEvents: filtered.length,
-    eventTitles: filtered.map(e => e.title)
+  const filtered = events.filter(event => {
+    const eventStart = new Date(event.startAt);
+    const eventEnd = new Date(event.endAt);
+    
+    // Event overlaps with target date if:
+    // - Event starts before or during target day AND
+    // - Event ends after or during target day
+    const overlaps = eventStart <= targetEnd && eventEnd >= targetStart;
+    
+    return overlaps;
   });
   
   return filtered;

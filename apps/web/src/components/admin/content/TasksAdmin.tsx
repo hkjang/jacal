@@ -94,7 +94,7 @@ export default function TasksAdmin() {
                 </td>
                 <td>
                   <span className={`status-badge ${task.status?.toLowerCase() || 'pending'}`}>
-                    {t(`tasks.status.${task.status?.toLowerCase() || 'pending'}`, task.status || 'Pending')}
+                    {String(t(`tasks.status.${task.status?.toLowerCase() || 'pending'}`, task.status || 'Pending'))}
                   </span>
                 </td>
                 <td>

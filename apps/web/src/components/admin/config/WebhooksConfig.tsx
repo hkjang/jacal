@@ -1,12 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
 
 export default function WebhooksConfig() {
   const { t } = useTranslation();
-  const [webhooks, setWebhooks] = useState([
+  const webhooks = [
     { id: 1, name: 'Slack Notifications', url: 'https://hooks.slack.com/services/xxx', events: ['user.created', 'event.created'], active: true },
     { id: 2, name: 'Discord Bot', url: 'https://discord.com/api/webhooks/xxx', events: ['task.completed'], active: false },
-  ]);
+  ];
 
   const availableEvents = [
     'user.created',

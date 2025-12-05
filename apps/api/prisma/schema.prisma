@@ -82,7 +82,7 @@ model Task {
 
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tags              Tag[]    @relation("TaskTags")
-  recurringRule     RecurringRule?
+  recurringRule     RecurringRule? @relation("TaskRecurringRule")
   // reminders removed - use polymorphic entityType/entityId pattern in Reminder model
   
   @@map("tasks")
@@ -106,7 +106,7 @@ model Event {
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tags            Tag[]    @relation("EventTags")
-  recurringRule   RecurringRule?
+  recurringRule   RecurringRule? @relation("EventRecurringRule")
   // reminders removed - use polymorphic entityType/entityId pattern in Reminder model
   
   @@map("events")
@@ -114,13 +114,13 @@ model Event {
 
 model RecurringRule {
   id          String   @id @default(uuid())
-  entityType  String   // task or event
-  entityId    String   @unique
+  taskId      String?  @unique
+  eventId     String?  @unique
   rruleText   String   // iCal RRULE format
   createdAt   DateTime @default(now())
 
-  task        Task?    @relation(fields: [entityId], references: [id], onDelete: Cascade, map: "recurring_rules_task_fk")
-  event       Event?   @relation(fields: [entityId], references: [id], onDelete: Cascade, map: "recurring_rules_event_fk")
+  task        Task?    @relation("TaskRecurringRule", fields: [taskId], references: [id], onDelete: Cascade)
+  event       Event?   @relation("EventRecurringRule", fields: [eventId], references: [id], onDelete: Cascade)
   
   @@map("recurring_rules")
 }

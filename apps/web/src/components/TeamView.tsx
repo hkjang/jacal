@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { teamAPI } from '../lib/teamApi';
-import { Team } from '../types/team';
 
 type Tab = 'events' | 'members' | 'settings';
 
@@ -82,7 +81,6 @@ export default function TeamView() {
   });
 
   const selectedTeam = teams?.find((t) => t.id === selectedTeamId);
-  const myMembership = selectedTeam?.members.find(m => m.user.email === 'me' || true); // In a real app, check against current user ID
   const canManage = true; // Simplified for now, backend checks permissions
 
   if (isLoadingTeams) return <div className="loading">{t('common.loading', '로딩 중...')}</div>;

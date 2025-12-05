@@ -16,7 +16,7 @@ const getRemindersForEvent = async (eventId: string) => {
 // Helper function to get recurring rule for an event
 const getRecurringRuleForEvent = async (eventId: string) => {
   return prisma.recurringRule.findUnique({
-    where: { entityId: eventId },
+    where: { eventId },
   });
 };
 
@@ -103,8 +103,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     if (recurringRule && recurringRule.rruleText) {
       await prisma.recurringRule.create({
         data: {
-          entityType: 'event',
-          entityId: event.id,
+          eventId: event.id,
           rruleText: recurringRule.rruleText,
         },
       });
@@ -187,15 +186,14 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
     if (recurringRule !== undefined) {
       // Delete existing recurring rule
       await prisma.recurringRule.deleteMany({
-        where: { entityId: id },
+        where: { eventId: id },
       });
 
       // Create new recurring rule if provided
       if (recurringRule && recurringRule.rruleText) {
         await prisma.recurringRule.create({
           data: {
-            entityType: 'event',
-            entityId: event.id,
+            eventId: event.id,
             rruleText: recurringRule.rruleText,
           },
         });
@@ -294,8 +292,7 @@ router.post('/:id/duplicate', authMiddleware, async (req: Request, res: Response
     if (originalEvent.recurringRule) {
       await prisma.recurringRule.create({
         data: {
-          entityType: 'event',
-          entityId: duplicatedEvent.id,
+          eventId: duplicatedEvent.id,
           rruleText: originalEvent.recurringRule.rruleText,
         },
       });
@@ -360,7 +357,7 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
 
     // Delete recurring rule (has cascade, but let's be explicit)
     await prisma.recurringRule.deleteMany({
-      where: { entityId: id },
+      where: { eventId: id },
     });
 
     await prisma.event.delete({

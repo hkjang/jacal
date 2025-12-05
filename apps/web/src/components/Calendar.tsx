@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Event } from '../lib/api';
 import { adminAPI } from '../lib/adminApi';
@@ -6,6 +6,7 @@ import { calendarAPI } from '../lib/calendarApi';
 import { teamAPI } from '../lib/teamApi';
 import { useTranslation } from 'react-i18next';
 import { getWeekDates, getMonthDates, filterEventsForDate } from '../lib/dateUtils';
+import { expandRecurringEvents, getViewDateRange } from '../lib/recurringUtils';
 import { useCalendarNavigation } from '../hooks/useCalendarNavigation';
 import { useEventMutations } from '../hooks/useEventMutations';
 import EventModal from './EventModal';
@@ -120,7 +121,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
       setResizeHeight(newHeight);
     };
 
-    const handleResizeEnd = async (e: MouseEvent) => {
+    const handleResizeEnd = async () => {
       if (!resizingEvent) return;
 
       const { event } = resizingEvent;
@@ -181,7 +182,13 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
     },
   });
 
-  const events = Array.isArray(eventsData) ? eventsData : [];
+  const rawEvents = Array.isArray(eventsData) ? eventsData : [];
+  
+  // Expand recurring events based on current view
+  const events = useMemo(() => {
+    const { start, end } = getViewDateRange(viewMode, selectedDate);
+    return expandRecurringEvents(rawEvents, start, end);
+  }, [rawEvents, viewMode, selectedDate]);
   
   // Keyboard shortcuts
   useEffect(() => {
@@ -409,6 +416,19 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
   const handleEventClick = (event: Event, e: React.MouseEvent) => {
     e.stopPropagation();
     setQuickAdd(null); // Close quick add if open
+    
+    // If this is a recurring instance, find the original event
+    const eventWithMeta = event as Event & { _isRecurringInstance?: boolean; _originalEventId?: string };
+    if (eventWithMeta._isRecurringInstance && eventWithMeta._originalEventId) {
+      const originalEvent = rawEvents.find(e => e.id === eventWithMeta._originalEventId);
+      if (originalEvent) {
+        setSelectedEvent(originalEvent);
+        setSelectedDateForCreate(null);
+        setModalOpen(true);
+        return;
+      }
+    }
+    
     setSelectedEvent(event);
     setSelectedDateForCreate(null);
     setModalOpen(true);
@@ -709,47 +729,9 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                             // Clamp start/end to week boundaries
                             const effectiveStart = start < weekStart ? weekStart : start;
                             const effectiveEnd = end > weekEnd ? weekEnd : end;
-
-                            const startDayIndex = effectiveStart.getDay(); // 0-6
-                            const endDayIndex = effectiveEnd.getDay(); // 0-6
-                            
-                            // Calculate span in days
-                            // If it wraps the week, we clamped it.
-                            // We need to be careful with day indices if week starts on Sunday (0)
-                            // weekDates[0] is Sunday.
-                            
-                            let colStart = effectiveStart.getDay();
-                            let colEnd = effectiveEnd.getDay();
-                            
-                            // If clamped start is weekStart, colStart is 0
-                            // If clamped end is weekEnd, colEnd is 6
                             
                             // Calculate duration in days for width
-                            // We can use the difference in time from the start of the week
                             const msPerDay = 24 * 60 * 60 * 1000;
-                            const startDiff = effectiveStart.getTime() - weekStart.getTime();
-                            const startDays = Math.floor(startDiff / msPerDay);
-                            
-                            const endDiff = effectiveEnd.getTime() - weekStart.getTime();
-                            // We want inclusive end day, so we need to see if it ends at 00:00 of next day or later
-                            // If end is 00:00, it effectively ends the previous day visually?
-                            // Standard practice: if end is 00:00, it doesn't include that day.
-                            // But our logic above (isMultiDay) includes it.
-                            // Let's use ceiling of duration?
-                            
-                            // Let's use grid columns. 1-based.
-                            // Start column: startDays + 1
-                            // Span: 
-                            
-                            const gridStart = startDays + 1;
-                            
-                            // Calculate span
-                            // If event is Mon 10am to Tue 10am.
-                            // Start Mon (1). End Tue (2). Span 2?
-                            // Yes, it covers Mon and Tue.
-                            
-                            let span = Math.ceil((effectiveEnd.getTime() - effectiveStart.getTime()) / msPerDay);
-                            if (span < 1) span = 1;
                             
                             // Adjust for "ends at midnight"
                             // If ends at 00:00:00, it shouldn't count that day?

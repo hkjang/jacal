@@ -50,8 +50,8 @@ export interface Event {
 
 export interface RecurringRule {
   id: string;
-  entityType: string;
-  entityId: string;
+  eventId?: string;
+  taskId?: string;
   rruleText: string;
 }
 

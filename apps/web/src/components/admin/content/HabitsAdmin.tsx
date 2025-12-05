@@ -94,7 +94,7 @@ export default function HabitsAdmin() {
                     <small>{habit.user.email}</small>
                   </div>
                 </td>
-                <td><span className="badge">{t(`habits.frequency.${habit.frequency.toLowerCase()}`, habit.frequency)}</span></td>
+                <td><span className="badge">{String(t(`habits.frequency.${habit.frequency.toLowerCase()}`, habit.frequency))}</span></td>
                 <td>{habit.targetDays} {t('habits.days', '일')}</td>
                 <td><span className="count-badge">{habit._count.logs}</span></td>
                 <td>{new Date(habit.createdAt).toLocaleDateString()}</td>
