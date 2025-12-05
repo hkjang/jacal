@@ -10,11 +10,25 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
 
-    // 1. Fetch personal events
+    // 1. Fetch personal events with recurring rules
     const personalEvents = await prisma.event.findMany({
       where: { userId },
-      include: { tags: true },
+      include: { 
+        tags: true,
+        recurringRule: true,
+      },
     });
+
+    // Fetch reminders for personal events
+    const personalEventsWithReminders = await Promise.all(
+      personalEvents.map(async (event) => {
+        const reminders = await prisma.reminder.findMany({
+          where: { entityType: 'event', entityId: event.id },
+          orderBy: { notifyAt: 'asc' },
+        });
+        return { ...event, reminders };
+      })
+    );
 
     // 2. Fetch team events
     const teamEvents = await prisma.sharedEvent.findMany({
@@ -42,7 +56,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
     });
 
     // 3. Combine and format
-    const formattedPersonalEvents = personalEvents.map(event => ({
+    const formattedPersonalEvents = personalEventsWithReminders.map(event => ({
       ...event,
       isTeamEvent: false,
     }));
@@ -54,7 +68,27 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
       // Map shared event fields to match Event interface if needed
     }));
 
-    res.json([...formattedPersonalEvents, ...formattedTeamEvents]);
+    // Debug: Log events with recurring rules
+    const eventsWithRecurring = formattedPersonalEvents.filter((e: any) => e.recurringRule);
+    console.log('[Calendar API] Events with recurring rules:', eventsWithRecurring.length);
+    if (eventsWithRecurring.length > 0) {
+      console.log('[Calendar API] Recurring events:', eventsWithRecurring.map((e: any) => ({
+        id: e.id,
+        title: e.title,
+        recurringRule: e.recurringRule
+      })));
+    }
+
+    // Debug: Check actual JSON output
+    const allEvents = [...formattedPersonalEvents, ...formattedTeamEvents];
+    const jsonOutput = JSON.stringify(allEvents);
+    const hasRecurringInJson = jsonOutput.includes('recurringRule');
+    console.log('[Calendar API] JSON includes recurringRule:', hasRecurringInJson);
+    if (!hasRecurringInJson && eventsWithRecurring.length > 0) {
+      console.log('[Calendar API] WARNING: recurringRule not in JSON! Sample event:', JSON.stringify(formattedPersonalEvents[0], null, 2));
+    }
+
+    res.json(allEvents);
   } catch (error) {
     console.error('Get all events error:', error);
     res.status(500).json({ error: 'Failed to fetch calendar events' });

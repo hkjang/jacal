@@ -184,6 +184,20 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
 
   const rawEvents = Array.isArray(eventsData) ? eventsData : [];
   
+  // Debug: Check recurring rules in events
+  useEffect(() => {
+    const eventsWithRecurring = rawEvents.filter(e => e.recurringRule);
+    if (eventsWithRecurring.length > 0) {
+      console.log('[Calendar] Events with recurring rules:', eventsWithRecurring.map(e => ({
+        id: e.id,
+        title: e.title,
+        recurringRule: e.recurringRule
+      })));
+    } else {
+      console.log('[Calendar] No events with recurring rules found. Total events:', rawEvents.length);
+    }
+  }, [rawEvents]);
+  
   // Expand recurring events based on current view
   const events = useMemo(() => {
     const { start, end } = getViewDateRange(viewMode, selectedDate);

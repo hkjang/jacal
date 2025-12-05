@@ -83,6 +83,9 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     const userId = req.user!.userId;
     const { title, description, startAt, endAt, location, reminders, eventType, isAllDay, isFocusTime, recurringRule } = req.body;
 
+    // Debug: Log incoming recurringRule
+    console.log('[Events API] Creating event with recurringRule:', recurringRule);
+
     const event = await prisma.event.create({
       data: {
         userId,

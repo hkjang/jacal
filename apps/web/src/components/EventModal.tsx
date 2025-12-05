@@ -255,6 +255,9 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, onDuplicate, event, ini
       rruleText: toRRule(formData.recurrence),
     } : undefined;
 
+    // Debug: Log what we're sending
+    console.log('[EventModal] Saving event with recurrence:', formData.recurrence, 'recurringRule:', recurringRule);
+
     onSave({
       title: formData.title,
       description: formData.description,
