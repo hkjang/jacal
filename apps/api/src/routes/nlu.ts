@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { authMiddleware } from '../middleware/auth';
 import { parseNaturalLanguage } from '../services/nlu';
+import { triggerWebhook } from '../services/webhook';
 
 const router = Router();
 
@@ -83,6 +84,9 @@ router.post('/parse', authMiddleware, async (req: Request, res: Response) => {
           },
         });
         created.push({ type: 'event', data: event });
+
+        // Trigger webhook if configured
+        await triggerWebhook(userId, 'create', event);
 
         // Create preparation task if specified
         if (entity.preparationTask) {
