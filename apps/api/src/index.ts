@@ -2,6 +2,7 @@ import './types/express';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import dotenv from 'dotenv';
 import taskRoutes from './routes/tasks';
 import eventRoutes from './routes/events';
@@ -30,20 +31,40 @@ const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',')
   : ['http://localhost:5173', 'http://localhost:3000'];
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
-app.use(express.json());
+
+
+// index.html 서빙 헬퍼 함수 (런타임 환경변수 주입)
+const serveIndexHtml = (req: express.Request, res: express.Response) => {
+  const publicPath = path.join(__dirname, '..', '..', '..', 'public');
+  const indexPath = path.join(publicPath, 'index.html');
+
+  fs.readFile(indexPath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('Error reading index.html:', err);
+      return res.status(500).send('Error loading application');
+    }
+
+    const apiUrl = process.env.VITE_API_URL || '';
+    const envScript = `<script>window.__ENV__ = { VITE_API_URL: "${apiUrl}" };</script>`;
+    const modifiedData = data.replace('</head>', `${envScript}</head>`);
+
+    res.send(modifiedData);
+  });
+};
 
 // 프로덕션 환경에서 정적 파일 서빙
 if (process.env.NODE_ENV === 'production') {
   const publicPath = path.join(__dirname, '..', '..', '..', 'public');
-  app.use(express.static(publicPath));
+  // 1. 정적 자산 서빙 (index.html 제외)
+  app.use(express.static(publicPath, { index: false }));
+
+  // 2. 루트 및 index.html 요청 처리
+  app.get('/', serveIndexHtml);
+  app.get('/index.html', serveIndexHtml);
 }
 
 // Routes
-// 개발 환경에서만 루트 경로에 API 응답 (프로덕션에서는 정적 파일 서빙)
+// 개발 환경에서만 루트 경로에 API 응답
 if (process.env.NODE_ENV !== 'production') {
   app.get('/', (req, res) => {
     res.json({ message: 'Jacal API - Productivity Platform' });
@@ -64,14 +85,13 @@ app.use('/api/habits', habitRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/search', searchRoutes);
 
-// SPA 폴백 (프로덕션 환경) - API 경로가 아닌 모든 요청을 index.html로 라우팅
+// SPA 폴백 (프로덕션 환경)
 if (process.env.NODE_ENV === 'production') {
-  const publicPath = path.join(__dirname, '..', '..', '..', 'public');
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
       return next();
     }
-    res.sendFile(path.join(publicPath, 'index.html'));
+    serveIndexHtml(req, res);
   });
 }
 
