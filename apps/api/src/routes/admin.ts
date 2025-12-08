@@ -10,6 +10,8 @@ import webhooksRouter from './admin/webhooks';
 import integrationsRouter from './admin/integrations';
 import emailRouter from './admin/email';
 import teamsRouter from './admin/teams';
+import notificationWebhooksRouter from './admin/notification-webhooks';
+import remindersRouter from './admin/reminders';
 
 const router = Router();
 
@@ -25,6 +27,7 @@ router.use('/webhooks', webhooksRouter); // webhook management
 router.use('/integrations', integrationsRouter); // integration management
 router.use('/email', emailRouter); // email settings
 router.use('/teams', teamsRouter); // team management
+router.use('/notification-webhooks', notificationWebhooksRouter); // notification webhook management
+router.use('/reminders', remindersRouter); // reminders management
 
 export default router;
-

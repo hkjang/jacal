@@ -106,18 +106,21 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, onDuplicate, event, ini
     if (event) {
       const startDate = new Date(event.startAt);
       const endDate = new Date(event.endAt);
-      
+
       // Check if event has reminders and extract minutes
       const reminderMinutes: number[] = [];
+      console.log('[EventModal] Loading event:', event.id, 'reminders:', event.reminders);
       if (event.reminders && event.reminders.length > 0) {
         event.reminders.forEach(r => {
           const notifyAt = new Date(r.notifyAt);
           const diffMinutes = Math.round((startDate.getTime() - notifyAt.getTime()) / (1000 * 60));
+          console.log('[EventModal] Reminder notifyAt:', r.notifyAt, 'diffMinutes:', diffMinutes);
           if (REMINDER_OPTIONS.some(opt => opt.value === diffMinutes)) {
             reminderMinutes.push(diffMinutes);
           }
         });
       }
+      console.log('[EventModal] Extracted reminderMinutes:', reminderMinutes);
 
       setFormData({
         title: event.title,
@@ -144,14 +147,14 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, onDuplicate, event, ini
       const now = new Date();
       // Only set time if initialDate doesn't have time (e.g. from month view click)
       if (start.getHours() === 0 && start.getMinutes() === 0) {
-          start.setHours(now.getHours(), now.getMinutes());
+        start.setHours(now.getHours(), now.getMinutes());
       }
-      
+
       let end: Date;
       if (initialEndDate) {
         end = new Date(initialEndDate);
         if (end.getHours() === 0 && end.getMinutes() === 0) {
-             end.setHours(start.getHours() + 1, start.getMinutes());
+          end.setHours(start.getHours() + 1, start.getMinutes());
         }
       } else {
         end = new Date(start);
@@ -231,10 +234,10 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, onDuplicate, event, ini
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     let startAt: Date;
     let endAt: Date;
-    
+
     if (formData.isAllDay) {
       // For all-day events, set start to 00:00 and end to 23:59
       startAt = new Date(formData.startDate + 'T00:00:00');
@@ -281,7 +284,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, onDuplicate, event, ini
           <h2>{event ? t('event.edit', '일정 수정') : t('event.create', '새 일정')}</h2>
           <button onClick={onClose} className="modal-close">×</button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
             <label>{t('event.title', '제목')} *</label>

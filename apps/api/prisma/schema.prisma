@@ -382,3 +382,34 @@ model BackupRecord {
 
   @@map("backup_records")
 }
+
+// 관리자가 설정하는 알림용 웹훅 (모든 사용자의 알림에 대해 트리거)
+model NotificationWebhook {
+  id          String   @id @default(uuid())
+  name        String   // 예: "Slack 알림", "Discord Bot"
+  url         String
+  active      Boolean  @default(true)
+  headers     Json?    // 커스텀 헤더 (Authorization 등)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  logs        NotificationWebhookLog[]
+
+  @@map("notification_webhooks")
+}
+
+// 웹훅 호출 로그
+model NotificationWebhookLog {
+  id          String   @id @default(uuid())
+  webhookId   String
+  reminderId  String
+  status      String   // "pending", "success", "failed"
+  statusCode  Int?     // HTTP 응답 코드
+  response    String?  // 응답 본문 (에러시)
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  webhook     NotificationWebhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@map("notification_webhook_logs")
+}

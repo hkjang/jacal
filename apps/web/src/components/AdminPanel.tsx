@@ -26,6 +26,8 @@ import GeneralConfig from './admin/config/GeneralConfig';
 import IntegrationsAdmin from './admin/config/IntegrationsAdmin';
 import WebhooksConfig from './admin/config/WebhooksConfig';
 import EmailSettings from './admin/config/EmailSettings';
+import NotificationWebhooksAdmin from './admin/config/NotificationWebhooksAdmin';
+import RemindersAdmin from './admin/content/RemindersAdmin';
 import './PageLayouts.css';
 import './admin/AdminPanel.css';
 
@@ -49,13 +51,13 @@ export default function AdminPanel({ onExit }: AdminPanelProps) {
   const [editMode, setEditMode] = useState(false);
   const [createMode, setCreateMode] = useState(false);
   const [currentSection, setCurrentSection] = useState('dashboard');
-  
+
   // Global search state
   const [globalSearch, setGlobalSearch] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-  
+
   // User list state
   const [userPage, setUserPage] = useState(1);
   const [userLimit] = useState(20);
@@ -263,8 +265,12 @@ export default function AdminPanel({ onExit }: AdminPanelProps) {
         return <IntegrationsAdmin />;
       case 'webhooks':
         return <WebhooksConfig />;
+      case 'notification-webhooks':
+        return <NotificationWebhooksAdmin />;
       case 'email':
         return <EmailSettings />;
+      case 'reminders-admin':
+        return <RemindersAdmin />;
       default:
         return <AdminStats stats={stats} />;
     }

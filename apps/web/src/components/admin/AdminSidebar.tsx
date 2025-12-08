@@ -49,6 +49,7 @@ export default function AdminSidebar({ currentSection, onSectionChange, onExit }
         { id: 'teams-admin', icon: '👥', label: t('admin.teams', '팀') },
         { id: 'tasks-admin', icon: '📋', label: t('admin.tasks', '작업') },
         { id: 'events-admin', icon: '📅', label: t('admin.events', '일정') },
+        { id: 'reminders-admin', icon: '🔔', label: t('admin.reminders', '알림') },
       ],
     },
     {
@@ -80,6 +81,7 @@ export default function AdminSidebar({ currentSection, onSectionChange, onExit }
         { id: 'general', icon: '⚙️', label: t('admin.general', '일반 설정') },
         { id: 'integrations', icon: '🔌', label: t('admin.integrations', '통합') },
         { id: 'webhooks', icon: '🪝', label: t('admin.webhooks', '웹훅') },
+        { id: 'notification-webhooks', icon: '🔔', label: t('admin.notificationWebhooks', '알림 웹훅') },
         { id: 'email', icon: '📧', label: t('admin.email', '이메일 설정') },
       ],
     },
@@ -150,7 +152,7 @@ export default function AdminSidebar({ currentSection, onSectionChange, onExit }
       </div>
 
       <div className="admin-sidebar-actions">
-        <button 
+        <button
           className={`back-to-app-btn ${isCollapsed ? 'collapsed' : ''}`}
           onClick={onExit}
         >

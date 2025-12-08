@@ -335,4 +335,51 @@ export const adminAPI = {
     const res = await api.put(`/api/admin/teams/${teamId}/members/${userId}`, { role });
     return res.data;
   },
+
+  // Notification Webhook Management
+  getNotificationWebhooks: async (): Promise<any[]> => {
+    const res = await api.get('/api/admin/notification-webhooks');
+    return res.data;
+  },
+
+  createNotificationWebhook: async (data: { name: string; url: string; active?: boolean; headers?: Record<string, string> }): Promise<any> => {
+    const res = await api.post('/api/admin/notification-webhooks', data);
+    return res.data;
+  },
+
+  updateNotificationWebhook: async (id: string, data: { name?: string; url?: string; active?: boolean; headers?: Record<string, string> }): Promise<any> => {
+    const res = await api.put(`/api/admin/notification-webhooks/${id}`, data);
+    return res.data;
+  },
+
+  deleteNotificationWebhook: async (id: string): Promise<any> => {
+    const res = await api.delete(`/api/admin/notification-webhooks/${id}`);
+    return res.data;
+  },
+
+  testNotificationWebhook: async (id: string): Promise<any> => {
+    const res = await api.post(`/api/admin/notification-webhooks/${id}/test`);
+    return res.data;
+  },
+
+  getNotificationWebhookLogs: async (params?: { page?: number; limit?: number; webhookId?: string; status?: string }): Promise<PaginatedResponse<any>> => {
+    const res = await api.get('/api/admin/notification-webhooks/logs/all', { params });
+    return res.data;
+  },
+
+  resendNotificationWebhook: async (logId: string): Promise<any> => {
+    const res = await api.post(`/api/admin/notification-webhooks/logs/${logId}/resend`);
+    return res.data;
+  },
+
+  // Reminders Management
+  getReminders: async (params?: { page?: number; limit?: number; search?: string; entityType?: string; sent?: string }): Promise<PaginatedResponse<any>> => {
+    const res = await api.get('/api/admin/reminders', { params });
+    return res.data;
+  },
+
+  getReminderStats: async (): Promise<any> => {
+    const res = await api.get('/api/admin/reminders/stats');
+    return res.data;
+  },
 };

@@ -64,11 +64,109 @@ export class NotificationService {
     }
   }
 
+  // Trigger all active notification webhooks for a reminder
+  private async triggerNotificationWebhooks(
+    reminder: { id: string; entityType: string; entityId: string; notifyAt: Date },
+    entityTitle: string,
+    userName: string,
+    userEmail: string
+  ) {
+    try {
+      // Get all active notification webhooks
+      const webhooks = await prisma.notificationWebhook.findMany({
+        where: { active: true },
+      });
+
+      if (webhooks.length === 0) {
+        console.log('No active notification webhooks configured');
+        return;
+      }
+
+      console.log(`Triggering ${webhooks.length} notification webhook(s) for reminder ${reminder.id}`);
+
+      const fetch = (await import('node-fetch')).default;
+
+      for (const webhook of webhooks) {
+        // Create log entry as pending
+        const log = await prisma.notificationWebhookLog.create({
+          data: {
+            webhookId: webhook.id,
+            reminderId: reminder.id,
+            status: 'pending',
+          },
+        });
+
+        try {
+          const payload = {
+            type: 'reminder',
+            timestamp: new Date().toISOString(),
+            data: {
+              reminderId: reminder.id,
+              entityType: reminder.entityType,
+              entityId: reminder.entityId,
+              entityTitle,
+              userName,
+              userEmail,
+              notifyAt: reminder.notifyAt.toISOString(),
+            },
+          };
+
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+          };
+
+          // Add custom headers if configured
+          if (webhook.headers && typeof webhook.headers === 'object') {
+            Object.assign(headers, webhook.headers);
+          }
+
+          const response = await fetch(webhook.url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
+          });
+
+          const responseText = await response.text();
+
+          // Update log with result
+          await prisma.notificationWebhookLog.update({
+            where: { id: log.id },
+            data: {
+              status: response.ok ? 'success' : 'failed',
+              statusCode: response.status,
+              response: response.ok ? null : responseText.substring(0, 1000),
+              sentAt: new Date(),
+            },
+          });
+
+          if (response.ok) {
+            console.log(`Webhook ${webhook.name} sent successfully for reminder ${reminder.id}`);
+          } else {
+            console.error(`Webhook ${webhook.name} failed: ${response.status}`);
+          }
+        } catch (fetchError: any) {
+          // Update log with error
+          await prisma.notificationWebhookLog.update({
+            where: { id: log.id },
+            data: {
+              status: 'failed',
+              response: fetchError.message,
+              sentAt: new Date(),
+            },
+          });
+          console.error(`Webhook ${webhook.name} error:`, fetchError.message);
+        }
+      }
+    } catch (error) {
+      console.error('Error triggering notification webhooks:', error);
+    }
+  }
+
   async checkReminders() {
     console.log('Checking for due reminders...');
     try {
       const now = new Date();
-      
+
       // Find unsent reminders due now or in the past
       const reminders = await prisma.reminder.findMany({
         where: {
@@ -92,7 +190,7 @@ export class NotificationService {
             where: { id: reminder.entityId },
             include: { user: true },
           });
-          
+
           if (task) {
             user = task.user;
             title = task.title;
@@ -103,7 +201,7 @@ export class NotificationService {
             where: { id: reminder.entityId },
             include: { user: true },
           });
-          
+
           if (event) {
             user = event.user;
             title = event.title;
@@ -112,10 +210,19 @@ export class NotificationService {
         }
 
         if (user && user.email) {
+          // Send email notification
           await this.sendEmail(
             user.email,
             `Reminder: ${title}`,
             `<p>This is a reminder for your ${type}: <strong>${title}</strong></p>`
+          );
+
+          // Trigger notification webhooks
+          await this.triggerNotificationWebhooks(
+            reminder,
+            title || 'Unknown',
+            user.name || user.email,
+            user.email
           );
 
           // Mark as sent

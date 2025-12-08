@@ -48,9 +48,20 @@ router.get('/events/all', authMiddleware, adminMiddleware, async (req: Request, 
         orderBy: { startAt: 'desc' },
       }),
     ]);
-    
+
+    // Fetch reminders for each event
+    const eventsWithReminders = await Promise.all(
+      events.map(async (event) => {
+        const reminders = await prisma.reminder.findMany({
+          where: { entityType: 'event', entityId: event.id },
+          orderBy: { notifyAt: 'asc' },
+        });
+        return { ...event, reminders };
+      })
+    );
+
     res.json({
-      data: events,
+      data: eventsWithReminders,
       meta: {
         total,
         page,
@@ -63,6 +74,7 @@ router.get('/events/all', authMiddleware, adminMiddleware, async (req: Request, 
     res.status(500).json({ error: 'Failed to fetch all events' });
   }
 });
+
 
 // Update event (admin only)
 router.put('/events/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
