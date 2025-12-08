@@ -3,6 +3,16 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminAPI } from '../../../lib/adminApi';
 
+// Helper function to format date for datetime-local input (preserves local timezone)
+const formatDateForInput = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 export default function EventsAdmin() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -201,7 +211,7 @@ export default function EventsAdmin() {
                   <input
                     type="datetime-local"
                     name="startAt"
-                    defaultValue={new Date(selectedEvent.startAt).toISOString().slice(0, 16)}
+                    defaultValue={formatDateForInput(new Date(selectedEvent.startAt))}
                     required
                   />
                 </div>
@@ -210,7 +220,7 @@ export default function EventsAdmin() {
                   <input
                     type="datetime-local"
                     name="endAt"
-                    defaultValue={new Date(selectedEvent.endAt).toISOString().slice(0, 16)}
+                    defaultValue={formatDateForInput(new Date(selectedEvent.endAt))}
                     required
                   />
                 </div>
