@@ -13,6 +13,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
       - CORS_ORIGINS=http://localhost:3000,http://localhost:3001
       - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
+    command: sh -c "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && node apps/api/dist/seed.production.js && node apps/api/dist/index.js"
     depends_on:
       postgres:
         condition: service_healthy

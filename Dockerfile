@@ -30,6 +30,8 @@ COPY apps/api ./apps/api
 # Generate Prisma client and build
 RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 RUN npm run build --workspace=api
+# Compile production seed script
+RUN npx tsc apps/api/scripts/seed.production.ts --outDir apps/api/dist --target es2020 --module commonjs --esModuleInterop --skipLibCheck
 
 # Production stage
 FROM node:20-alpine AS production
