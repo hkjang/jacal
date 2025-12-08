@@ -27,11 +27,19 @@ RUN npm ci --workspace=api --include-workspace-root --ignore-scripts
 # Copy API source and prisma schema
 COPY apps/api ./apps/api
 
+# Debug: List scripts folder contents
+RUN echo "=== Scripts folder contents ===" && ls -la apps/api/scripts/ || echo "Scripts folder not found or empty"
+
 # Generate Prisma client and build
 RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 RUN npm run build --workspace=api
-# Compile production seed script (run from scripts dir so output goes to dist root)
-RUN cd apps/api/scripts && npx tsc seed.production.ts --outDir ../dist --target es2020 --module commonjs --esModuleInterop --skipLibCheck
+
+# Compile production seed script (only if file exists)
+RUN if [ -f "apps/api/scripts/seed.production.ts" ]; then \
+    cd apps/api/scripts && npx tsc seed.production.ts --outDir ../dist --target es2020 --module commonjs --esModuleInterop --skipLibCheck; \
+    else \
+    echo "WARNING: seed.production.ts not found, skipping compilation"; \
+    fi
 
 # Production stage
 FROM node:20-alpine AS production
