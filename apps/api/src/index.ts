@@ -14,6 +14,7 @@ import adminRoutes from './routes/admin';
 import habitRoutes from './routes/habits';
 import teamRoutes from './routes/teams';
 import searchRoutes from './routes/search';
+import publicRoutes from './routes/public';
 import cron from 'node-cron';
 import { notificationService } from './services/notification';
 import { autoRegisterService } from './services/auto-register';
@@ -34,6 +35,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'Jacal API - Productivity Platform' });
 });
 
+app.use('/api/public', publicRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/events', eventRoutes);

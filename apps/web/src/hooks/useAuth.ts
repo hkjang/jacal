@@ -1,20 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { authAPI } from '../lib/api';
+import { authAPI, publicAPI } from '../lib/api';
 
 export function useAuth() {
   const { t } = useTranslation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loginMode, setLoginMode] = useState<'login' | 'register'>('login');
-  
+  const [registrationAllowed, setRegistrationAllowed] = useState(true);
+
   // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
 
-  // Check if user is logged in
+  // Check if user is logged in and fetch public config
   useEffect(() => {
+    // Fetch public config to check if registration is allowed
+    publicAPI.getConfig().then(config => {
+      setRegistrationAllowed(config.allowRegistration);
+    }).catch(() => {
+      // Default to allowing registration if config can't be fetched
+      setRegistrationAllowed(true);
+    });
+
     const token = localStorage.getItem('token');
     if (token) {
       setIsAuthenticated(true);
@@ -45,9 +54,11 @@ export function useAuth() {
         setIsAuthenticated(true);
         setIsAdmin(data.user.isAdmin || false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth error:', error);
-      alert(t('auth.failed', '인증 실패'));
+      // Show specific error message from API if available
+      const message = error.response?.data?.message || t('auth.failed', '인증 실패');
+      alert(message);
     }
   };
 
@@ -65,6 +76,7 @@ export function useAuth() {
     isAdmin,
     loginMode,
     setLoginMode,
+    registrationAllowed,
     email,
     setEmail,
     password,
@@ -75,3 +87,4 @@ export function useAuth() {
     handleLogout
   };
 }
+

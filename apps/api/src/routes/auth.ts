@@ -38,7 +38,7 @@ router.get('/google/url', authMiddleware, (req: Request, res: Response) => {
 router.get('/google/callback', async (req: Request, res: Response) => {
   try {
     const { code, state } = req.query;
-    
+
     if (!code || typeof code !== 'string') {
       return res.status(400).send('Invalid code');
     }
@@ -101,9 +101,27 @@ const loginSchema = z.object({
 // Register
 router.post('/register', async (req: Request, res: Response) => {
   try {
+    // Check if registration is allowed
+    const appSettings = await prisma.appSettings.findFirst();
+    if (appSettings && appSettings.allowRegistration === false) {
+      return res.status(403).json({
+        error: 'Registration is currently disabled',
+        message: '현재 회원가입이 비활성화되어 있습니다. 관리자에게 문의하세요.'
+      });
+    }
+
     const validation = registerSchema.safeParse(req.body);
     if (!validation.success) {
-      return res.status(400).json({ error: 'Invalid input', details: validation.error.issues });
+      // Return detailed validation errors
+      const errors = validation.error.issues.map(issue => ({
+        field: issue.path.join('.'),
+        message: issue.message,
+      }));
+      return res.status(400).json({
+        error: 'Invalid input',
+        details: errors,
+        message: errors.map(e => `${e.field}: ${e.message}`).join(', ')
+      });
     }
 
     const { email, name, password } = validation.data;
@@ -111,7 +129,10 @@ router.post('/register', async (req: Request, res: Response) => {
     // Check if user exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(400).json({
+        error: 'User already exists',
+        message: '이미 등록된 이메일입니다.'
+      });
     }
 
     // Hash password
@@ -137,9 +158,10 @@ router.post('/register', async (req: Request, res: Response) => {
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin } });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Registration failed' });
+    res.status(500).json({ error: 'Registration failed', message: '회원가입에 실패했습니다.' });
   }
 });
+
 
 // Login
 router.post('/login', async (req: Request, res: Response) => {

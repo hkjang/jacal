@@ -18,20 +18,21 @@ function App() {
     return stored && validViews.includes(stored) ? stored : 'home';
   });
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
-  
-  const { 
-    isAuthenticated, 
-    isAdmin, 
-    loginMode, 
-    setLoginMode, 
-    email, 
-    setEmail, 
-    password, 
-    setPassword, 
-    name, 
-    setName, 
-    handleAuth, 
-    handleLogout 
+
+  const {
+    isAuthenticated,
+    isAdmin,
+    loginMode,
+    setLoginMode,
+    registrationAllowed,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    name,
+    setName,
+    handleAuth,
+    handleLogout
   } = useAuth();
 
   // Persist view changes to localStorage
@@ -46,10 +47,12 @@ function App() {
     { key: '3', alt: true, handler: () => setView('settings'), description: 'Go to Settings' },
     { key: '4', alt: true, handler: () => setView('admin'), description: 'Go to Admin', condition: isAdmin },
     { key: '/', shift: true, handler: () => setShowShortcutsModal(true), description: 'Show shortcuts' },
-    { key: 'k', ctrlOrCmd: true, handler: () => {
-      const input = document.querySelector('.nlu-input') as HTMLInputElement;
-      if (input) input.focus();
-    }, description: 'Focus input' },
+    {
+      key: 'k', ctrlOrCmd: true, handler: () => {
+        const input = document.querySelector('.nlu-input') as HTMLInputElement;
+        if (input) input.focus();
+      }, description: 'Focus input'
+    },
   ], isAuthenticated);
 
   if (!isAuthenticated) {
@@ -64,6 +67,7 @@ function App() {
         name={name}
         setName={setName}
         onSubmit={handleAuth}
+        registrationAllowed={registrationAllowed}
       />
     );
   }
@@ -77,7 +81,7 @@ function App() {
         onLogout={handleLogout}
         isAdmin={isAdmin}
       />
-      <KeyboardShortcutsModal 
+      <KeyboardShortcutsModal
         isOpen={showShortcutsModal}
         onClose={() => setShowShortcutsModal(false)}
       />

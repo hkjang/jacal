@@ -84,6 +84,14 @@ export const authAPI = {
   },
 };
 
+// Public API (no auth required)
+export const publicAPI = {
+  getConfig: async (): Promise<{ allowRegistration: boolean; siteName: string }> => {
+    const { data } = await api.get('/public/config');
+    return data;
+  },
+};
+
 // Task API
 export const taskAPI = {
   getAll: async (): Promise<Task[]> => {
