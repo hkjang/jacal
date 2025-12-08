@@ -145,6 +145,9 @@ echo ""
 echo -e "${YELLOW}  ⚠️  중요: .env 파일에서 다음 값들을 반드시 수정하세요!${NC}"
 echo "     - JWT_SECRET: 고유한 비밀키로 변경"
 echo "     - VITE_API_URL: 이 서버의 IP 또는 도메인으로 변경"
+echo "       예: http://192.168.1.100:3000"
+echo ""
+echo -e "${GREEN}  💡 참고: VITE_API_URL은 자동으로 CORS 허용 목록에 추가됩니다${NC}"
 echo ""
 read -p "  .env 파일을 지금 편집하시겠습니까? (Y/n): " edit_env
 

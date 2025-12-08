@@ -78,7 +78,8 @@ Write-Step "Step 1: 환경 확인"
 try {
     $dockerVersion = docker --version
     Write-Success "Docker 설치됨: $dockerVersion"
-} catch {
+}
+catch {
     Write-Error-Custom "Docker가 설치되지 않았거나 실행되지 않습니다."
     Write-Host "  Docker Desktop을 설치하고 실행해주세요." -ForegroundColor Yellow
     exit 1
@@ -88,7 +89,8 @@ try {
 try {
     docker info | Out-Null
     Write-Success "Docker 데몬 실행 중"
-} catch {
+}
+catch {
     Write-Error-Custom "Docker 데몬이 실행되지 않습니다."
     Write-Host "  Docker Desktop을 시작해주세요." -ForegroundColor Yellow
     exit 1
@@ -208,10 +210,12 @@ $envContent = @"
 JWT_SECRET=your-super-secret-key-change-this-immediately
 
 # API URL (오프라인 환경의 서버 IP/도메인으로 변경)
+# 예: http://192.168.1.100:3000 또는 http://your-server.local:3000
 VITE_API_URL=http://localhost:3000
 
-# CORS 허용 Origin (필요시 추가)
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+# CORS 허용 Origin (VITE_API_URL은 자동으로 추가됩니다)
+# 추가로 허용할 Origin이 있으면 콤마로 구분하여 추가하세요
+CORS_ORIGINS=http://localhost:3000
 
 # Database 설정 (docker-compose.prod.yml과 일치시키세요)
 DATABASE_URL=postgresql://jacal:jacal123@postgres:5432/jacal?schema=public
@@ -262,10 +266,12 @@ Get-ChildItem $outputDir | ForEach-Object {
     $size = if ($_.Length) { 
         if ($_.Length -gt 1MB) { 
             "{0:N2} MB" -f ($_.Length / 1MB) 
-        } else { 
+        }
+        else { 
             "{0:N2} KB" -f ($_.Length / 1KB) 
         }
-    } else { 
+    }
+    else { 
         "N/A" 
     }
     Write-Host "    $($_.Name.PadRight(30)) $size" -ForegroundColor White

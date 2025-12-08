@@ -27,13 +27,57 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // CORS 설정 (개발 및 프로덕션 환경 지원)
-const allowedOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://localhost:3000'];
+const buildAllowedOrigins = (): string[] => {
+  const origins = new Set<string>();
+
+  // 기본 개발 환경 origins
+  origins.add('http://localhost:5173');
+  origins.add('http://localhost:3000');
+
+  // CORS_ORIGINS 환경변수에서 추가
+  if (process.env.CORS_ORIGINS) {
+    process.env.CORS_ORIGINS.split(',').forEach(origin => {
+      const trimmed = origin.trim();
+      if (trimmed) origins.add(trimmed);
+    });
+  }
+
+  // VITE_API_URL이 설정되어 있으면 자동으로 허용 목록에 추가
+  if (process.env.VITE_API_URL) {
+    try {
+      const apiUrl = new URL(process.env.VITE_API_URL);
+      origins.add(apiUrl.origin);
+    } catch (e) {
+      console.warn('Invalid VITE_API_URL format:', process.env.VITE_API_URL);
+    }
+  }
+
+  return Array.from(origins);
+};
+
+const allowedOrigins = buildAllowedOrigins();
+console.log('🔒 CORS Allowed Origins:', allowedOrigins);
 
 // Middleware
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // 프로덕션에서 Same-Origin 요청 허용 (origin이 undefined인 경우)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // 개발 편의를 위해 localhost 변형들도 허용
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+
+    console.warn(`⚠️ CORS blocked request from origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 app.use(express.json());
