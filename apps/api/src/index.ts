@@ -31,7 +31,13 @@ const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',')
   : ['http://localhost:5173', 'http://localhost:3000'];
 
-
+// Middleware
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // index.html 서빙 헬퍼 함수 (런타임 환경변수 주입)
 const serveIndexHtml = (req: express.Request, res: express.Response) => {
