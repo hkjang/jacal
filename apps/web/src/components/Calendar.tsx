@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Event } from '../lib/api';
 import { adminAPI } from '../lib/adminApi';
@@ -11,6 +11,7 @@ import { useCalendarNavigation } from '../hooks/useCalendarNavigation';
 import { useEventMutations } from '../hooks/useEventMutations';
 import EventModal from './EventModal';
 import QuickAddPopover from './QuickAddPopover';
+import DayEventsPopover from './DayEventsPopover';
 import './Calendar.css';
 
 interface CalendarProps {
@@ -20,14 +21,14 @@ interface CalendarProps {
 const Calendar = ({ isAdmin = false }: CalendarProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { 
-    viewMode, 
-    setViewMode, 
-    selectedDate, 
+  const {
+    viewMode,
+    setViewMode,
+    selectedDate,
     setSelectedDate,
-    navigatePrev, 
-    navigateNext, 
-    goToToday 
+    navigatePrev,
+    navigateNext,
+    goToToday
   } = useCalendarNavigation();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -56,11 +57,11 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
   const handleMonthDateMouseUp = () => {
     if (isSelecting && selectionStart && selectionEnd) {
       setIsSelecting(false);
-      
+
       // Determine start and end (user might drag backwards)
       const start = selectionStart < selectionEnd ? selectionStart : selectionEnd;
       const end = selectionStart < selectionEnd ? selectionEnd : selectionStart;
-      
+
       // Open modal with range
       setSelectedDateForCreate(start);
       // We need to pass the end date to the modal somehow. 
@@ -94,6 +95,15 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
   // Quick Add state
   const [quickAdd, setQuickAdd] = useState<{ isOpen: boolean; x: number; y: number; date: Date } | null>(null);
 
+  // Day Events Popover state (for "+X more" click)
+  const [dayEventsPopover, setDayEventsPopover] = useState<{
+    isOpen: boolean;
+    x: number;
+    y: number;
+    date: Date;
+    events: Event[]
+  } | null>(null);
+
   // Drag and drop state
   const [draggedEvent, setDraggedEvent] = useState<Event | null>(null);
   const [dragOverDate, setDragOverDate] = useState<Date | null>(null);
@@ -126,7 +136,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
 
       const { event } = resizingEvent;
       const finalHeight = resizeHeight || resizingEvent.initialHeight;
-      
+
       // Calculate new end time
       // 50px = 60 minutes -> 1px = 1.2 minutes
       const durationMinutes = (finalHeight / 50) * 60;
@@ -183,7 +193,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
   });
 
   const rawEvents = Array.isArray(eventsData) ? eventsData : [];
-  
+
   // Debug: Check recurring rules in events
   useEffect(() => {
     const eventsWithRecurring = rawEvents.filter(e => e.recurringRule);
@@ -197,13 +207,13 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
       console.log('[Calendar] No events with recurring rules found. Total events:', rawEvents.length);
     }
   }, [rawEvents]);
-  
+
   // Expand recurring events based on current view
   const events = useMemo(() => {
     const { start, end } = getViewDateRange(viewMode, selectedDate);
     return expandRecurringEvents(rawEvents, start, end);
   }, [rawEvents, viewMode, selectedDate]);
-  
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -256,7 +266,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
   const getEventTypeClass = (event: Event) => {
     if ((event as any).isTeamEvent) return 'event-type-team';
     if ((event as any).isFocusTime) return 'event-type-focus';
-    
+
     switch (event.eventType) {
       case 'WORK': return 'event-type-work';
       case 'MEETING': return 'event-type-meeting';
@@ -306,31 +316,31 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
   const handleDrop = useCallback(async (targetDate: Date, e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!draggedEvent) return;
-    
+
     try {
       const originalStart = new Date(draggedEvent.startAt);
       const originalEnd = new Date(draggedEvent.endAt);
       const duration = originalEnd.getTime() - originalStart.getTime();
-      
+
       // Calculate time from drop position
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const clickY = e.clientY - rect.top;
-      
+
       // 50px = 60 minutes
       const minutes = Math.floor((clickY / 50) * 60);
       // Snap to nearest 15 minutes
       const snappedMinutes = Math.round(minutes / 15) * 15;
-      
+
       const hours = Math.floor(snappedMinutes / 60);
       const mins = snappedMinutes % 60;
-      
+
       const newStart = new Date(targetDate);
       newStart.setHours(hours, mins, 0, 0);
-      
+
       const newEnd = new Date(newStart.getTime() + duration);
-      
+
       // Update the event
       if ((draggedEvent as any).isTeamEvent) {
         await teamAPI.updateEvent(draggedEvent.id, {
@@ -346,7 +356,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
           }
         });
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
     } catch (error) {
       console.error('Failed to move event:', error);
@@ -359,12 +369,12 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
 
   const handleTimeSlotClick = (date: Date, e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     // Calculate 15-minute slot from click position if in time grid
     let targetDate = new Date(date);
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const clickY = e.clientY - rect.top;
-    
+
     // Check if we are in time grid view (clickY is relative to day column)
     // In month view, clickY might be different, but we only use this for Week View Time Grid for now
     if (viewMode === 'week') {
@@ -399,7 +409,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
         description: '',
         location: '',
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
       setQuickAdd(null);
     } catch (error) {
@@ -427,10 +437,68 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
     setModalOpen(true);
   };
 
+  // Timer ref for popover close delay
+  const popoverCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Handle "+X more" hover to show all events for a day
+  const handleMoreEventsHover = (date: Date, events: Event[], e: React.MouseEvent) => {
+    // Cancel any pending close timer
+    if (popoverCloseTimerRef.current) {
+      clearTimeout(popoverCloseTimerRef.current);
+      popoverCloseTimerRef.current = null;
+    }
+
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    setDayEventsPopover({
+      isOpen: true,
+      x: rect.left,
+      y: rect.bottom + 5,
+      date,
+      events
+    });
+  };
+
+  // Handle mouse leave from more-events
+  const handleMoreEventsLeave = () => {
+    // Small delay to allow moving to the popover
+    popoverCloseTimerRef.current = setTimeout(() => {
+      setDayEventsPopover(null);
+    }, 200);
+  };
+
+  // Handle mouse enter on popover - cancel close timer
+  const handlePopoverMouseEnter = () => {
+    if (popoverCloseTimerRef.current) {
+      clearTimeout(popoverCloseTimerRef.current);
+      popoverCloseTimerRef.current = null;
+    }
+  };
+
+  // Handle mouse leave from popover
+  const handlePopoverMouseLeave = () => {
+    popoverCloseTimerRef.current = setTimeout(() => {
+      setDayEventsPopover(null);
+    }, 150);
+  };
+
+  // Handle event click from day events popover
+  const handleDayEventsPopoverEventClick = (event: Event, e: React.MouseEvent) => {
+    setDayEventsPopover(null);
+    handleEventClick(event, e);
+  };
+
+  // Handle add event from day events popover
+  const handleDayEventsPopoverAddEvent = (date: Date) => {
+    setDayEventsPopover(null);
+    setSelectedDateForCreate(date);
+    setSelectedEvent(null);
+    setModalOpen(true);
+  };
+
   const handleEventClick = (event: Event, e: React.MouseEvent) => {
     e.stopPropagation();
     setQuickAdd(null); // Close quick add if open
-    
+
     // If this is a recurring instance, find the original event
     const eventWithMeta = event as Event & { _isRecurringInstance?: boolean; _originalEventId?: string };
     if (eventWithMeta._isRecurringInstance && eventWithMeta._originalEventId) {
@@ -442,7 +510,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
         return;
       }
     }
-    
+
     setSelectedEvent(event);
     setSelectedDateForCreate(null);
     setModalOpen(true);
@@ -495,11 +563,11 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
     try {
       setModalOpen(false);
       setSelectedEvent(null);
-      
+
       // Use backend duplicate endpoint
       const { eventAPI } = await import('../lib/api');
       await eventAPI.duplicate(eventToDuplicate.id);
-      
+
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
     } catch (error) {
       console.error('Failed to duplicate event:', error);
@@ -512,7 +580,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
 
   // Mini Calendar state
   const [miniCalendarDate, setMiniCalendarDate] = useState(new Date());
-  
+
   useEffect(() => {
     setMiniCalendarDate(selectedDate);
   }, [selectedDate]);
@@ -568,8 +636,8 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                 const isSelected = date.toDateString() === selectedDate.toDateString();
                 const isToday = date.toDateString() === new Date().toDateString();
                 return (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     className={`mini-calendar-day ${!isCurrentMonth ? 'other-month' : ''} ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
                     onClick={() => {
                       setSelectedDate(date);
@@ -592,8 +660,8 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                 </div>
               ) : (
                 upcomingEvents.map(event => (
-                  <div 
-                    key={event.id} 
+                  <div
+                    key={event.id}
                     className="upcoming-event-item"
                     onClick={(e) => handleEventClick(event, e)}
                   >
@@ -623,22 +691,22 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
               <button onClick={navigatePrev} className="btn btn-secondary">←</button>
               <button onClick={navigateNext} className="btn btn-secondary">→</button>
               <h2 className="calendar-title">
-                {selectedDate.toLocaleDateString('ko-KR', { 
-                  year: 'numeric', 
+                {selectedDate.toLocaleDateString('ko-KR', {
+                  year: 'numeric',
                   month: 'long',
                   ...(viewMode === 'week' && { day: 'numeric' })
                 })}
               </h2>
             </div>
             <div className="flex gap-sm">
-              <button 
-                onClick={() => setViewMode('week')} 
+              <button
+                onClick={() => setViewMode('week')}
                 className={`btn ${viewMode === 'week' ? 'btn-primary' : 'btn-secondary'}`}
               >
                 {t('calendar.week', '주간')}
               </button>
-              <button 
-                onClick={() => setViewMode('month')} 
+              <button
+                onClick={() => setViewMode('month')}
                 className={`btn ${viewMode === 'month' ? 'btn-primary' : 'btn-secondary'}`}
               >
                 {t('calendar.month', '월간')}
@@ -654,13 +722,13 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                   const isToday = date.toDateString() === new Date().toDateString();
                   return (
                     <div key={i} className={`time-grid-header-cell ${isToday ? 'today' : ''}`}>
-                      {['일', '월', '화', '수', '목', '금', '토'][date.getDay()]} 
+                      {['일', '월', '화', '수', '목', '금', '토'][date.getDay()]}
                       <span className="ml-1">{date.getDate()}</span>
                     </div>
                   );
                 })}
               </div>
-              
+
               {/* Multi-day Section */}
               <div className="multi-day-section">
                 <div className="multi-day-header">
@@ -671,7 +739,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                   {Array.from({ length: 7 }).map((_, i) => (
                     <div key={i} className="multi-day-bg-col"></div>
                   ))}
-                  
+
                   {/* Multi-day Events */}
                   <div className="multi-day-event-container">
                     {(() => {
@@ -693,11 +761,11 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                       // In a real app, we'd calculate overlaps to determine 'top' offset
                       // For simplicity here, we'll just map them and let them overlap or stack simply
                       // To do it right, we need to assign rows.
-                      
+
                       const sortedEvents = multiDayEvents.sort((a, b) => {
-                         const startA = new Date(a.startAt).getTime();
-                         const startB = new Date(b.startAt).getTime();
-                         return startA - startB; // Sort by start time
+                        const startA = new Date(a.startAt).getTime();
+                        const startB = new Date(b.startAt).getTime();
+                        return startA - startB; // Sort by start time
                       });
 
                       // Assign rows
@@ -707,7 +775,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                       sortedEvents.forEach(event => {
                         const start = new Date(event.startAt);
                         const end = new Date(event.endAt);
-                        
+
                         // Find first row where this event fits
                         let rowIndex = 0;
                         while (true) {
@@ -743,43 +811,43 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                             // Clamp start/end to week boundaries
                             const effectiveStart = start < weekStart ? weekStart : start;
                             const effectiveEnd = end > weekEnd ? weekEnd : end;
-                            
+
                             // Calculate duration in days for width
                             const msPerDay = 24 * 60 * 60 * 1000;
-                            
+
                             // Adjust for "ends at midnight"
                             // If ends at 00:00:00, it shouldn't count that day?
                             if (effectiveEnd.getHours() === 0 && effectiveEnd.getMinutes() === 0 && effectiveEnd.getSeconds() === 0) {
-                               // If it was exactly 24h (Mon 00:00 to Tue 00:00), span is 1 day (Mon).
-                               // But our isMultiDay check (toDateString) says they are different.
-                               // Wait, Mon 00:00 to Tue 00:00.
-                               // start.toDateString() != end.toDateString(). True.
-                               // Should it be multi-day? Yes, usually "All Day".
-                               // But visually it only takes up Monday column.
-                               // So span should be 1.
-                               
-                               // If Mon 10am to Tue 10am.
-                               // Span should be 2 (Mon and Tue).
+                              // If it was exactly 24h (Mon 00:00 to Tue 00:00), span is 1 day (Mon).
+                              // But our isMultiDay check (toDateString) says they are different.
+                              // Wait, Mon 00:00 to Tue 00:00.
+                              // start.toDateString() != end.toDateString(). True.
+                              // Should it be multi-day? Yes, usually "All Day".
+                              // But visually it only takes up Monday column.
+                              // So span should be 1.
+
+                              // If Mon 10am to Tue 10am.
+                              // Span should be 2 (Mon and Tue).
                             }
-                            
+
                             // Better span calculation:
                             // (End Day Index - Start Day Index) + 1
                             const dayIndexStart = Math.floor((effectiveStart.getTime() - weekStart.getTime()) / msPerDay);
                             let dayIndexEnd = Math.floor((effectiveEnd.getTime() - weekStart.getTime()) / msPerDay);
-                            
+
                             if (effectiveEnd.getHours() === 0 && effectiveEnd.getMinutes() === 0 && effectiveEnd.getSeconds() === 0 && effectiveEnd > effectiveStart) {
-                                dayIndexEnd -= 1;
+                              dayIndexEnd -= 1;
                             }
-                            
+
                             const colSpan = (dayIndexEnd - dayIndexStart) + 1;
 
                             return (
-                              <div 
+                              <div
                                 key={event.id}
                                 className={`multi-day-event ${getEventTypeClass(event)}`}
                                 style={{
-                                  left: `${dayIndexStart * (100/7)}%`,
-                                  width: `${colSpan * (100/7)}%`,
+                                  left: `${dayIndexStart * (100 / 7)}%`,
+                                  width: `${colSpan * (100 / 7)}%`,
                                   top: `${rowIndex * 24}px`
                                 }}
                                 onClick={(e) => handleEventClick(event, e)}
@@ -810,13 +878,13 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                     const end = new Date(event.endAt);
                     return start.toDateString() === end.toDateString();
                   });
-                  
+
                   const isToday = date.toDateString() === new Date().toDateString();
                   const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                  
+
                   return (
-                    <div 
-                      key={i} 
+                    <div
+                      key={i}
                       className={`day-column ${isWeekend ? 'weekend' : ''}`}
                       onClick={(e) => handleTimeSlotClick(date, e)}
                       onDragOver={(e) => handleDragOver(date, e)}
@@ -834,7 +902,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                         const end = new Date(event.endAt);
                         const startMinutes = start.getHours() * 60 + start.getMinutes();
                         const durationMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
-                        
+
                         // Calculate position and height
                         // 50px per hour = 50/60 px per minute
                         const top = (startMinutes * 50) / 60;
@@ -846,8 +914,8 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                         }
 
                         return (
-                          <div 
-                            key={event.id} 
+                          <div
+                            key={event.id}
                             className={`time-grid-event ${getEventTypeClass(event)} ${draggedEvent?.id === event.id ? 'dragging' : ''} ${resizingEvent?.event.id === event.id ? 'resizing' : ''}`}
                             style={{ top: `${top}px`, height: `${height}px` }}
                             onClick={(e) => handleEventClick(event, e)}
@@ -866,7 +934,7 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                               {' - '}
                               {end.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                             </div>
-                            <div 
+                            <div
                               className="resize-handle"
                               onMouseDown={(e) => handleResizeStart(event, e, height)}
                               onClick={(e) => e.stopPropagation()} // Prevent event click
@@ -874,13 +942,13 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                           </div>
                         );
                       })}
-                      
+
                       {/* Current Time Indicator (only for today) */}
                       {isToday && (
-                        <div 
+                        <div
                           className="current-time-indicator"
-                          style={{ 
-                            top: `${(new Date().getHours() * 60 + new Date().getMinutes()) * 50 / 60}px` 
+                          style={{
+                            top: `${(new Date().getHours() * 60 + new Date().getMinutes()) * 50 / 60}px`
                           }}
                         />
                       )}
@@ -904,20 +972,29 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                   const isToday = date.toDateString() === new Date().toDateString();
                   const isWeekend = date.getDay() === 0 || date.getDay() === 6; // Sunday or Saturday
                   const isSelected = isDateSelected(date);
-                  
+
                   return (
-                    <div 
-                      key={i} 
+                    <div
+                      key={i}
                       className={`month-day ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${isSelected ? 'selecting' : ''}`}
                       onMouseDown={(e) => handleMonthDateMouseDown(date, e)}
                       onMouseEnter={() => handleMonthDateMouseEnter(date)}
-                      onClick={() => !isSelecting && handleDateClick(date)}
+                      onClick={(e) => {
+                        // Don't open modal if clicking on events or "more" button
+                        const target = e.target as HTMLElement;
+                        if (target.closest('.calendar-event-compact') || target.closest('.more-events')) {
+                          return;
+                        }
+                        if (!isSelecting) {
+                          handleDateClick(date);
+                        }
+                      }}
                     >
                       <div className="day-number">{date.getDate()}</div>
                       <div className="day-events-compact">
                         {dayEvents.slice(0, 3).map(event => (
-                          <div 
-                            key={event.id} 
+                          <div
+                            key={event.id}
                             className={`calendar-event-compact ${getEventTypeClass(event)}`}
                             onClick={(e) => handleEventClick(event, e)}
                             title={`${event.title} ${getEventIndicators(event)}`}
@@ -929,7 +1006,13 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
                           </div>
                         ))}
                         {dayEvents.length > 3 && (
-                          <div className="more-events">+{dayEvents.length - 3} more</div>
+                          <div
+                            className="more-events"
+                            onMouseEnter={(e) => handleMoreEventsHover(date, dayEvents, e)}
+                            onMouseLeave={handleMoreEventsLeave}
+                          >
+                            +{dayEvents.length - 3} more
+                          </div>
                         )}
                       </div>
                     </div>
@@ -959,6 +1042,21 @@ const Calendar = ({ isAdmin = false }: CalendarProps) => {
           onClose={() => setQuickAdd(null)}
           onSave={handleQuickAddSave}
           onMoreOptions={handleQuickAddMoreOptions}
+        />
+      )}
+
+      {dayEventsPopover && (
+        <DayEventsPopover
+          isOpen={dayEventsPopover.isOpen}
+          position={{ x: dayEventsPopover.x, y: dayEventsPopover.y }}
+          date={dayEventsPopover.date}
+          events={dayEventsPopover.events}
+          onClose={() => setDayEventsPopover(null)}
+          onEventClick={handleDayEventsPopoverEventClick}
+          onAddEvent={handleDayEventsPopoverAddEvent}
+          getEventTypeClass={getEventTypeClass}
+          onMouseEnter={handlePopoverMouseEnter}
+          onMouseLeave={handlePopoverMouseLeave}
         />
       )}
     </div>
