@@ -56,22 +56,32 @@ const buildAllowedOrigins = (): string[] => {
 };
 
 const allowedOrigins = buildAllowedOrigins();
+const isProduction = process.env.NODE_ENV === 'production';
 console.log('🔒 CORS Allowed Origins:', allowedOrigins);
+console.log('🌐 Production mode:', isProduction);
 
 // Middleware
 app.use(cors({
   origin: (origin, callback) => {
-    // 프로덕션에서 Same-Origin 요청 허용 (origin이 undefined인 경우)
+    // Same-Origin 요청 허용 (origin이 undefined인 경우 - 프로덕션에서 정적 파일과 같은 서버에서 요청)
     if (!origin) {
       return callback(null, true);
     }
 
+    // 허용된 origin 목록에 있는 경우
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    // 개발 편의를 위해 localhost 변형들도 허용
+    // localhost 또는 127.0.0.1 변형 허용 (개발 환경)
     if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+
+    // 프로덕션 환경에서는 IP 주소 기반 요청도 허용 (오프라인 환경 지원)
+    // IP 주소 패턴: http(s)://숫자.숫자.숫자.숫자(:포트)
+    if (isProduction && /^https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin)) {
+      console.log(`✅ CORS allowing IP-based origin in production: ${origin}`);
       return callback(null, true);
     }
 

@@ -11,10 +11,19 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://jacal:jacal123@postgres:5432/jacal?schema=public
       - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
-      # CORS_ORIGINS와 VITE_API_URL은 동일한 값을 사용하거나, VITE_API_URL이 자동으로 CORS에 추가됩니다
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
-    command: sh -c "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && node apps/api/dist/seed.production.js && node apps/api/dist/index.js"
+      # VITE_API_URL을 설정하면 자동으로 CORS 허용 목록에 추가됩니다
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      - VITE_API_URL=${VITE_API_URL:-}
+    command: >
+      sh -c "
+        npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma &&
+        if [ -f apps/api/dist/seed.production.js ]; then
+          node apps/api/dist/seed.production.js;
+        else
+          echo 'seed.production.js not found, skipping seed';
+        fi &&
+        node apps/api/dist/index.js
+      "
     depends_on:
       postgres:
         condition: service_healthy

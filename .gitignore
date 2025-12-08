@@ -54,6 +54,8 @@ postgres-data/
 tmp/
 temp/
 *.tmp
+offline-deploy/
+offline-deploy.7z
 
 # Lock files (optional - uncomment if you want to ignore them)
 # package-lock.json
