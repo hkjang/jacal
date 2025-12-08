@@ -94,7 +94,7 @@
   "events": {
     "title": "Events",
     "empty": "No events yet. Try adding one using natural language!",
-    "location": "📍 {{location}}"
+    "location": "📍 location"
   },
   "event": {
     "create": "New Event",
