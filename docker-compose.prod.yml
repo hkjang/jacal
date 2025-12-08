@@ -3,7 +3,7 @@ version: "3.8"
 services:
   app:
     build: .
-    image: jacal:latest
+    image: gagagiga/jacal:latest
     container_name: jacal-app
     ports:
       - "3000:3000"
