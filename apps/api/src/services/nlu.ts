@@ -2,8 +2,10 @@ import OpenAI from 'openai';
 import prisma from '../lib/prisma';
 
 export interface ParsedEntity {
+  action: 'create' | 'update' | 'delete';
   type: 'task' | 'event';
   title: string;
+  searchTitle?: string; // For update/delete: the title to search for
   description?: string;
   dueAt?: string; // ISO string
   startAt?: string; // ISO string
@@ -25,13 +27,13 @@ async function getOpenAIClient(userId: string): Promise<{ client: OpenAI; model:
 
   // Determine if using Ollama or OpenAI
   const useOllama = userSettings?.ollamaEnabled || !process.env.OPENAI_API_KEY;
-  
+
   if (useOllama) {
     const ollamaBaseURL = userSettings?.ollamaBaseUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434/v1';
     const ollamaModel = userSettings?.ollamaModel || process.env.OLLAMA_MODEL || 'gpt-oss:20b';
-    
+
     console.log(`Using user's Ollama config: ${ollamaBaseURL}, model: ${ollamaModel}`);
-    
+
     return {
       client: new OpenAI({
         apiKey: 'ollama',
@@ -55,30 +57,36 @@ export async function parseNaturalLanguage(input: string, userId: string, timezo
     // Get user-specific OpenAI client
     const { client, model } = await getOpenAIClient(userId);
 
-    const systemPrompt = `You are a natural language parser for a productivity app. Parse user input and extract tasks or events.
+    const systemPrompt = `You are a natural language parser for a productivity app. Parse user input and extract tasks or events with their intended action.
 Current timezone: ${timezone}
 Current date/time: ${new Date().toISOString()}
 
 Rules:
-1. Determine if the input describes a task or an event (or both)
-2. Extract title, times, durations, locations, priorities
-3. If preparation time is mentioned (e.g., "준비 30분", "prep 20 min"), create a separate preparation task
-4. Return a JSON array of entities
+1. Determine the ACTION: "create", "update", or "delete"
+   - Keywords for delete: 삭제, 지워, 취소, remove, delete, cancel
+   - Keywords for update: 수정, 변경, 미뤄, 당겨, 바꿔, change, modify, reschedule, move
+   - Default to "create" if no delete/update intent is detected
+2. Determine if the input describes a task or an event
+3. Extract title, times, durations, locations, priorities
+4. For delete/update actions: set "searchTitle" to identify the target event/task
+5. For update actions: set new values in the appropriate fields
+6. If preparation time is mentioned (e.g., "준비 30분", "prep 20 min"), create a separate preparation task
+7. Return a JSON array of entities
 
 Response format (MUST be valid JSON):
 {
   "entities": [
     {
+      "action": "create" | "update" | "delete",
       "type": "event" | "task",
       "title": string,
+      "searchTitle": string (required for update/delete - the title to search for),
       "description": string (optional),
       "dueAt": ISO datetime string (for tasks),
-      "startAt": ISO datetime string (for events),
+      "startAt": ISO datetime string (for events, required for create),
       "endAt": ISO datetime string (for events),
       "estimatedMinutes": number (optional),
-      "priority": 0-5 (optional, higher is more import
-
-ant),
+      "priority": 0-5 (optional, higher is more important),
       "location": string (optional),
       "preparationTask": { "title": string, "estimatedMinutes": number } (optional)
     }
@@ -111,7 +119,7 @@ ant),
     }
 
     const parsed = JSON.parse(cleanedResponse);
-    
+
     // Handle both array and object responses
     if (Array.isArray(parsed)) {
       return parsed;
@@ -120,7 +128,7 @@ ant),
     } else if (parsed.type) {
       return [parsed];
     }
-    
+
     return [];
   } catch (error) {
     console.error('NLU parsing error:', error);
@@ -180,7 +188,7 @@ Response format (MUST be valid JSON):
     }
 
     const parsed = JSON.parse(cleanedResponse);
-    
+
     if (Array.isArray(parsed)) {
       return parsed;
     } else if (parsed.entities && Array.isArray(parsed.entities)) {
@@ -188,7 +196,7 @@ Response format (MUST be valid JSON):
     } else if (parsed.type) {
       return [parsed];
     }
-    
+
     return [];
   } catch (error) {
     console.error('Email parsing error:', error);
