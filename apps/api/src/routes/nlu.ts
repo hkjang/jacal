@@ -24,7 +24,7 @@ router.post('/parse', authMiddleware, async (req: Request, res: Response) => {
 
     // Create entities in database
     const created: any[] = [];
-    
+
     for (const entity of entities) {
       if (entity.type === 'task') {
         const task = await prisma.task.create({
@@ -53,13 +53,31 @@ router.post('/parse', authMiddleware, async (req: Request, res: Response) => {
           created.push({ type: 'task', data: prepTask });
         }
       } else if (entity.type === 'event') {
+        // Calculate startAt and endAt with fallback for missing endAt
+        const startAt = new Date(entity.startAt!);
+        let endAt: Date;
+
+        if (entity.endAt) {
+          const parsedEndAt = new Date(entity.endAt);
+          // Check if endAt is a valid date
+          if (!isNaN(parsedEndAt.getTime())) {
+            endAt = parsedEndAt;
+          } else {
+            // If endAt is invalid, default to startAt + 1 hour
+            endAt = new Date(startAt.getTime() + 60 * 60 * 1000);
+          }
+        } else {
+          // If endAt is not provided, default to startAt + 1 hour
+          endAt = new Date(startAt.getTime() + 60 * 60 * 1000);
+        }
+
         const event = await prisma.event.create({
           data: {
             userId,
             title: entity.title,
             description: entity.description,
-            startAt: new Date(entity.startAt!),
-            endAt: new Date(entity.endAt!),
+            startAt,
+            endAt,
             location: entity.location,
             sourceCalendar: 'manual',
           },
@@ -83,10 +101,10 @@ router.post('/parse', authMiddleware, async (req: Request, res: Response) => {
       }
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       parsed: entities,
-      created 
+      created
     });
   } catch (error) {
     console.error(error);
