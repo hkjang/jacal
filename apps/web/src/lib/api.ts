@@ -131,9 +131,30 @@ export const eventAPI = {
 };
 
 // NLU API
+export interface PendingAction {
+  action: 'delete' | 'update';
+  type: 'event' | 'task';
+  targetId: string;
+  targetTitle: string;
+  changes?: Record<string, any>;
+  message: string;
+}
+
+export interface NLUParseResponse {
+  success: boolean;
+  requiresConfirmation: boolean;
+  pendingActions?: PendingAction[];
+  parsed: any[];
+  created: any[];
+}
+
 export const nluAPI = {
-  parse: async (input: string) => {
+  parse: async (input: string): Promise<NLUParseResponse> => {
     const { data } = await api.post('/nlu/parse', { input });
+    return data;
+  },
+  confirm: async (pendingActions: PendingAction[]): Promise<{ success: boolean; results: any[] }> => {
+    const { data } = await api.post('/nlu/confirm', { pendingActions });
     return data;
   },
 };

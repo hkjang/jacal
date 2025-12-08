@@ -9,7 +9,18 @@ import './PageLayouts.css';
 
 export default function HomePage() {
   const { t } = useTranslation();
-  const { naturalInput, setNaturalInput, handleNaturalInput, parseMutation } = useNaturalInput();
+  const {
+    naturalInput,
+    setNaturalInput,
+    handleNaturalInput,
+    parseMutation,
+    // Confirmation state
+    showConfirmation,
+    confirmMessage,
+    handleConfirm,
+    handleCancel,
+    confirmMutation,
+  } = useNaturalInput();
   const { autoScheduleMutation } = useScheduler();
   const { focusTimeMutation } = useFocus();
 
@@ -26,6 +37,60 @@ export default function HomePage() {
 
   return (
     <main className="app-content" style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Confirmation Dialog */}
+      {showConfirmation && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-surface, #fff)',
+              padding: '2rem',
+              borderRadius: '12px',
+              maxWidth: '400px',
+              width: '90%',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            }}
+          >
+            <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>
+              {t('nlu.confirm.title', '확인')}
+            </h3>
+            <p style={{ marginBottom: '1.5rem', whiteSpace: 'pre-wrap' }}>
+              {confirmMessage}
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={handleCancel}
+                className="btn btn-secondary"
+                disabled={confirmMutation.isPending}
+              >
+                {t('nlu.confirm.cancel', '취소')}
+              </button>
+              <button
+                onClick={handleConfirm}
+                className="btn btn-primary"
+                disabled={confirmMutation.isPending}
+              >
+                {confirmMutation.isPending
+                  ? t('nlu.confirm.processing', '처리 중...')
+                  : t('nlu.confirm.confirm', '확인')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <section className="nlu-section">
         <h2 className="section-title">{t('nlu.title', '자연어 입력')}</h2>
         <form onSubmit={handleNaturalInput} className="nlu-form">
@@ -36,8 +101,8 @@ export default function HomePage() {
             placeholder={t('nlu.placeholder', '예: 내일 오전 9시 회의 1시간, 준비 30분 포함')}
             className="nlu-input"
           />
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn btn-primary"
             disabled={parseMutation.isPending}
           >
@@ -47,17 +112,17 @@ export default function HomePage() {
         {parseMutation.isError && (
           <p className="error-message">{t('nlu.error', '입력 분석 실패. 백엔드 .env 파일의 API 키를 확인해주세요.')}</p>
         )}
-        
+
         <div className="flex gap-md" style={{ marginTop: '1rem' }}>
-          <button 
-            onClick={() => autoScheduleMutation.mutate()} 
+          <button
+            onClick={() => autoScheduleMutation.mutate()}
             className="btn btn-secondary"
             disabled={autoScheduleMutation.isPending}
           >
             {autoScheduleMutation.isPending ? t('actions.scheduling', '스케줄링 중...') : t('actions.autoSchedule', '🤖 작업 자동 스케줄링')}
           </button>
-          <button 
-            onClick={() => focusTimeMutation.mutate()} 
+          <button
+            onClick={() => focusTimeMutation.mutate()}
             className="btn btn-secondary"
             disabled={focusTimeMutation.isPending}
           >
