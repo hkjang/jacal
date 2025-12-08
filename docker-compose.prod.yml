@@ -16,12 +16,16 @@ services:
       - VITE_API_URL=${VITE_API_URL:-}
     command: >
       sh -c "
-        npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma &&
+        echo '🔄 Applying database schema...' &&
+        npx prisma db push --schema=apps/api/prisma/schema.prisma --accept-data-loss &&
+        echo '✅ Database schema applied!' &&
         if [ -f apps/api/dist/seed.production.js ]; then
+          echo '🌱 Running seed script...' &&
           node apps/api/dist/seed.production.js;
         else
-          echo 'seed.production.js not found, skipping seed';
+          echo '⚠️ seed.production.js not found, skipping seed';
         fi &&
+        echo '🚀 Starting server...' &&
         node apps/api/dist/index.js
       "
     depends_on:
