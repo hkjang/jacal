@@ -85,6 +85,8 @@ model Task {
   recurringRule     RecurringRule? @relation("TaskRecurringRule")
   // reminders removed - use polymorphic entityType/entityId pattern in Reminder model
   
+  @@index([userId, status]) // Index for filtering by status
+  @@index([userId, dueAt])  // Index for due date queries
   @@map("tasks")
 }
 
@@ -138,6 +140,8 @@ model Reminder {
   // Note: task and event relations removed to support polymorphic association
   // The entityId field can reference either tasks.id or events.id based on entityType
   
+  @@index([entityType, entityId]) // Index for entity lookup
+  @@index([notifyAt, sent])       // Index for scheduler queries
   @@map("reminders")
 }
 
@@ -248,6 +252,7 @@ model HabitLog {
 
   habit       Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
 
+  @@index([habitId, completedAt]) // Index for habit history queries
   @@map("habit_logs")
 }
 
@@ -300,6 +305,7 @@ model SharedEvent {
   author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments    Comment[]
 
+  @@index([teamId, startAt]) // Index for team schedule queries
   @@map("shared_events")
 }
 
@@ -314,6 +320,7 @@ model Comment {
   sharedEvent   SharedEvent @relation(fields: [sharedEventId], references: [id], onDelete: Cascade)
   user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([sharedEventId, createdAt]) // Index for comment listing
   @@map("comments")
 }
 
@@ -381,6 +388,7 @@ model BackupRecord {
   status    String   @default("success")
   createdAt DateTime @default(now())
 
+  @@index([createdAt]) // Index for time-based queries
   @@map("backup_records")
 }
 
@@ -412,5 +420,7 @@ model NotificationWebhookLog {
 
   webhook     NotificationWebhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
 
+  @@index([webhookId, createdAt]) // Index for webhook log queries
+  @@index([status, createdAt])    // Index for failed log queries
   @@map("notification_webhook_logs")
 }
