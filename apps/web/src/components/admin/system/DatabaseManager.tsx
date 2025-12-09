@@ -1,13 +1,26 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminAPI } from '../../../lib/adminApi';
 
 export default function DatabaseManager() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [newPoolSize, setNewPoolSize] = useState<number | null>(null);
+  const [showRestartNotice, setShowRestartNotice] = useState(false);
 
   const { data: dbInfo, isLoading } = useQuery({
     queryKey: ['admin', 'database-stats'],
     queryFn: adminAPI.getDatabaseStats,
+  });
+
+  const updatePoolMutation = useMutation({
+    mutationFn: (connectionLimit: number) => adminAPI.updatePoolConfig({ connectionLimit }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'database-stats'] });
+      setShowRestartNotice(true);
+      setNewPoolSize(null);
+    },
   });
 
   if (isLoading) {
@@ -15,6 +28,8 @@ export default function DatabaseManager() {
   }
 
   const tableStats = dbInfo?.tableStats || {};
+  const poolConfig = dbInfo?.poolConfig || { connectionLimit: 10, configuredLimit: 10 };
+  const currentPoolSize = newPoolSize !== null ? newPoolSize : poolConfig.configuredLimit;
 
   // Calculate table statistics
   const tables = [
@@ -24,10 +39,23 @@ export default function DatabaseManager() {
     { name: 'Habit', icon: '🎯', count: tableStats.habits || 0, color: '#a855f7' },
     { name: 'Team', icon: '👥', count: tableStats.teams || 0, color: '#ec4899' },
     { name: 'HabitLog', icon: '📊', count: tableStats.habitLogs || 0, color: '#06b6d4' },
+    { name: 'Reminder', icon: '⏰', count: tableStats.reminders || 0, color: '#84cc16' },
+    { name: 'Tag', icon: '🏷️', count: tableStats.tags || 0, color: '#f97316' },
   ];
 
   const totalRecords = tables.reduce((sum, t) => sum + t.count, 0);
   const maxTableCount = Math.max(...tables.map(t => t.count), 1);
+
+  const handlePoolSizeChange = (value: number) => {
+    setNewPoolSize(value);
+    setShowRestartNotice(false);
+  };
+
+  const handleSavePoolConfig = () => {
+    if (newPoolSize !== null) {
+      updatePoolMutation.mutate(newPoolSize);
+    }
+  };
 
   return (
     <div className="database-container">
@@ -128,7 +156,7 @@ export default function DatabaseManager() {
         </div>
       </div>
 
-      {/* Connection Status */}
+      {/* Connection Status & Pool Configuration */}
       <div className="connection-section">
         <h3 className="section-title">{t('admin.connectionStatus', '연결 상태')}</h3>
         <div className="connection-card">
@@ -145,10 +173,74 @@ export default function DatabaseManager() {
               <span className="detail-value">Prisma ORM</span>
             </div>
             <div className="connection-detail">
-              <span className="detail-key">{t('admin.poolSize', '풀 크기')}</span>
-              <span className="detail-value">10</span>
+              <span className="detail-key">{t('admin.poolSize', '현재 풀 크기')}</span>
+              <span className="detail-value">{poolConfig.connectionLimit}</span>
             </div>
           </div>
+        </div>
+
+        {/* Pool Configuration */}
+        <div className="pool-config-card">
+          <h4 className="pool-config-title">
+            🔧 {t('admin.poolConfiguration', '풀 크기 설정')}
+          </h4>
+          <p className="pool-config-desc">
+            {t('admin.poolConfigDesc', '데이터베이스 연결 풀의 최대 연결 수를 설정합니다. 변경 사항은 서버 재시작 후 적용됩니다.')}
+          </p>
+
+          <div className="pool-slider-container">
+            <div className="pool-slider-header">
+              <span className="pool-slider-label">{t('admin.connectionLimit', '연결 제한')}</span>
+              <span className="pool-slider-value">{currentPoolSize}</span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="100"
+              value={currentPoolSize}
+              onChange={(e) => handlePoolSizeChange(parseInt(e.target.value, 10))}
+              className="pool-slider"
+            />
+            <div className="pool-slider-range">
+              <span>1</span>
+              <span>25</span>
+              <span>50</span>
+              <span>75</span>
+              <span>100</span>
+            </div>
+          </div>
+
+          <div className="pool-actions">
+            <button
+              className="pool-save-btn"
+              onClick={handleSavePoolConfig}
+              disabled={newPoolSize === null || updatePoolMutation.isPending}
+            >
+              {updatePoolMutation.isPending ? t('common.saving', '저장 중...') : t('common.save', '저장')}
+            </button>
+            {newPoolSize !== null && (
+              <button
+                className="pool-cancel-btn"
+                onClick={() => setNewPoolSize(null)}
+              >
+                {t('common.cancel', '취소')}
+              </button>
+            )}
+          </div>
+
+          {showRestartNotice && (
+            <div className="restart-notice">
+              <span className="notice-icon">⚠️</span>
+              <span>{t('admin.restartRequired', '변경 사항이 저장되었습니다. 서버를 재시작하면 새 설정이 적용됩니다.')}</span>
+            </div>
+          )}
+
+          {updatePoolMutation.isError && (
+            <div className="error-notice">
+              <span className="notice-icon">❌</span>
+              <span>{t('admin.saveError', '저장에 실패했습니다. 다시 시도해 주세요.')}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -373,6 +465,7 @@ export default function DatabaseManager() {
           border-radius: 16px;
           padding: 1.5rem;
           border: 1px solid var(--border);
+          margin-bottom: 1rem;
         }
 
         .connection-status-row {
@@ -435,6 +528,161 @@ export default function DatabaseManager() {
           color: var(--text-primary);
         }
 
+        .pool-config-card {
+          background: var(--bg-secondary);
+          border-radius: 16px;
+          padding: 1.5rem;
+          border: 1px solid var(--border);
+          border-left: 4px solid #3b82f6;
+        }
+
+        .pool-config-title {
+          margin: 0 0 0.5rem 0;
+          font-size: 1rem;
+          font-weight: 600;
+        }
+
+        .pool-config-desc {
+          margin: 0 0 1.5rem 0;
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+        }
+
+        .pool-slider-container {
+          margin-bottom: 1.5rem;
+        }
+
+        .pool-slider-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.75rem;
+        }
+
+        .pool-slider-label {
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+        }
+
+        .pool-slider-value {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #3b82f6;
+        }
+
+        .pool-slider {
+          width: 100%;
+          height: 8px;
+          border-radius: 4px;
+          background: var(--border);
+          outline: none;
+          -webkit-appearance: none;
+          appearance: none;
+        }
+
+        .pool-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #3b82f6;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+          transition: transform 0.2s ease;
+        }
+
+        .pool-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.1);
+        }
+
+        .pool-slider::-moz-range-thumb {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #3b82f6;
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        .pool-slider-range {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 0.5rem;
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+        }
+
+        .pool-actions {
+          display: flex;
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+        }
+
+        .pool-save-btn {
+          padding: 0.75rem 1.5rem;
+          background: #3b82f6;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .pool-save-btn:hover:not(:disabled) {
+          background: #2563eb;
+        }
+
+        .pool-save-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .pool-cancel-btn {
+          padding: 0.75rem 1.5rem;
+          background: var(--bg-tertiary);
+          color: var(--text-primary);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .pool-cancel-btn:hover {
+          background: var(--border);
+        }
+
+        .restart-notice {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 1rem;
+          background: rgba(245, 158, 11, 0.1);
+          border: 1px solid rgba(245, 158, 11, 0.3);
+          border-radius: 8px;
+          color: #f59e0b;
+          font-size: 0.9rem;
+        }
+
+        .error-notice {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 1rem;
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          border-radius: 8px;
+          color: #ef4444;
+          font-size: 0.9rem;
+        }
+
+        .notice-icon {
+          font-size: 1.25rem;
+        }
+
         .database-note {
           display: flex;
           gap: 1rem;
@@ -490,8 +738,13 @@ export default function DatabaseManager() {
             flex-direction: column;
             gap: 1rem;
           }
+
+          .pool-actions {
+            flex-direction: column;
+          }
         }
       `}</style>
     </div>
   );
 }
+

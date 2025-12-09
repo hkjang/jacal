@@ -334,6 +334,7 @@ model AppSettings {
   allowRegistration        Boolean  @default(true)
   requireEmailVerification Boolean  @default(false)
   maxUploadSizeMB          Int      @default(10)
+  connectionLimit          Int      @default(10)
   updatedAt                DateTime @updatedAt
 
   @@map("app_settings")

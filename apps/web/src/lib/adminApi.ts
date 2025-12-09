@@ -190,6 +190,12 @@ export const adminAPI = {
     return res.data;
   },
 
+  updatePoolConfig: async (data: { connectionLimit: number }): Promise<any> => {
+    const res = await api.put('/api/admin/database/pool-config', data);
+    return res.data;
+  },
+
+
   // Backup Management
   getBackups: async (params?: { page?: number; limit?: number }): Promise<PaginatedResponse<any>> => {
     const res = await api.get('/api/admin/backups', { params });
