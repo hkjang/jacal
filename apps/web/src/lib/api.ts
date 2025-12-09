@@ -112,9 +112,23 @@ export const taskAPI = {
 };
 
 // Event API
+export interface EventQueryParams {
+  startFrom?: string; // ISO date string
+  endTo?: string;     // ISO date string
+}
+
 export const eventAPI = {
-  getAll: async (): Promise<Event[]> => {
-    const { data } = await api.get('/events');
+  getAll: async (params?: EventQueryParams): Promise<Event[]> => {
+    const queryParams = new URLSearchParams();
+    if (params?.startFrom) {
+      queryParams.append('startFrom', params.startFrom);
+    }
+    if (params?.endTo) {
+      queryParams.append('endTo', params.endTo);
+    }
+    const queryString = queryParams.toString();
+    const url = queryString ? `/events?${queryString}` : '/events';
+    const { data } = await api.get(url);
     return data;
   },
   getById: async (id: string): Promise<Event> => {

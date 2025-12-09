@@ -109,6 +109,7 @@ model Event {
   recurringRule   RecurringRule? @relation("EventRecurringRule")
   // reminders removed - use polymorphic entityType/entityId pattern in Reminder model
   
+  @@index([userId, startAt]) // Index for optimized date range queries
   @@map("events")
 }
 

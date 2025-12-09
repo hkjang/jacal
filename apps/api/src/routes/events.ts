@@ -20,12 +20,41 @@ const getRecurringRuleForEvent = async (eventId: string) => {
   });
 };
 
-// Get all events for current user
+// Get all events for current user with optional date range filtering
+// Default range: past 1 year ~ future 4 years
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
+
+    // Parse date range from query parameters
+    const now = new Date();
+    const defaultStartFrom = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    const defaultEndTo = new Date(now.getFullYear() + 4, now.getMonth(), now.getDate());
+
+    const startFrom = req.query.startFrom
+      ? new Date(req.query.startFrom as string)
+      : defaultStartFrom;
+    const endTo = req.query.endTo
+      ? new Date(req.query.endTo as string)
+      : defaultEndTo;
+
+    // Validate date range limits (max: 1 year past, 4 years future)
+    const maxPastDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    const maxFutureDate = new Date(now.getFullYear() + 4, now.getMonth(), now.getDate());
+
+    const validatedStartFrom = startFrom < maxPastDate ? maxPastDate : startFrom;
+    const validatedEndTo = endTo > maxFutureDate ? maxFutureDate : endTo;
+
+    console.log(`[Events API] Fetching events for user ${userId} from ${validatedStartFrom.toISOString()} to ${validatedEndTo.toISOString()}`);
+
     const events = await prisma.event.findMany({
-      where: { userId },
+      where: {
+        userId,
+        startAt: {
+          gte: validatedStartFrom,
+          lte: validatedEndTo,
+        },
+      },
       include: {
         tags: true,
         recurringRule: true,
