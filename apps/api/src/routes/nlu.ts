@@ -257,7 +257,7 @@ router.post('/parse', authMiddleware, async (req: Request, res: Response) => {
             },
           });
           created.push({ type: 'event', action: 'created', data: event });
-          await triggerWebhook(userId, 'create', event);
+          await triggerWebhook(userId, 'create', event, 'event');
 
           if (entity.preparationTask) {
             const prepTask = await prisma.task.create({
@@ -357,14 +357,14 @@ router.post('/confirm', authMiddleware, async (req: Request, res: Response) => {
             where: { eventId: event.id },
           });
           await prisma.event.delete({ where: { id: event.id } });
-          await triggerWebhook(userId, 'delete', { id: event.id, deleted: true });
+          await triggerWebhook(userId, 'delete', { id: event.id, deleted: true }, 'event');
           results.push({ type: 'event', action: 'deleted', data: event });
         } else if (action === 'update') {
           const updated = await prisma.event.update({
             where: { id: event.id },
             data: changes,
           });
-          await triggerWebhook(userId, 'update', updated);
+          await triggerWebhook(userId, 'update', updated, 'event');
           results.push({ type: 'event', action: 'updated', data: updated });
         }
       }

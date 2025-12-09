@@ -26,7 +26,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
     const userId = req.user!.userId;
     const events = await prisma.event.findMany({
       where: { userId },
-      include: { 
+      include: {
         tags: true,
         recurringRule: true,
       },
@@ -55,11 +55,11 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const event = await prisma.event.findFirst({
-      where: { 
+      where: {
         id,
         ...(req.user!.isAdmin ? {} : { userId }),
       },
-      include: { 
+      include: {
         tags: true,
         recurringRule: true,
       },
@@ -131,15 +131,15 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     }
 
     // Fetch the created recurring rule
-    const createdRecurringRule = recurringRule?.rruleText 
+    const createdRecurringRule = recurringRule?.rruleText
       ? await getRecurringRuleForEvent(event.id)
       : null;
 
     // Trigger webhook if configured
-    await triggerWebhook(userId, 'create', event);
+    await triggerWebhook(userId, 'create', event, 'event');
 
-    res.json({ 
-      ...event, 
+    res.json({
+      ...event,
       reminders: createdReminders,
       recurringRule: createdRecurringRule,
     });
@@ -236,10 +236,10 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
     const updatedRecurringRule = await getRecurringRuleForEvent(event.id);
 
     // Trigger webhook
-    await triggerWebhook(userId, 'update', event);
+    await triggerWebhook(userId, 'update', event, 'event');
 
-    res.json({ 
-      ...event, 
+    res.json({
+      ...event,
       reminders: updatedReminders,
       recurringRule: updatedRecurringRule,
     });
@@ -257,11 +257,11 @@ router.post('/:id/duplicate', authMiddleware, async (req: Request, res: Response
 
     // Fetch the original event
     const originalEvent = await prisma.event.findFirst({
-      where: { 
+      where: {
         id,
         ...(req.user!.isAdmin ? {} : { userId }),
       },
-      include: { 
+      include: {
         tags: true,
         recurringRule: true,
       },
@@ -322,8 +322,8 @@ router.post('/:id/duplicate', authMiddleware, async (req: Request, res: Response
 
     const duplicatedRecurringRule = await getRecurringRuleForEvent(duplicatedEvent.id);
 
-    res.json({ 
-      ...duplicatedEvent, 
+    res.json({
+      ...duplicatedEvent,
       reminders: createdReminders,
       recurringRule: duplicatedRecurringRule,
     });
@@ -370,7 +370,7 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
     res.json({ message: 'Event deleted' });
 
     // Trigger webhook (send id and deleted flag)
-    await triggerWebhook(userId, 'delete', { id, deleted: true });
+    await triggerWebhook(userId, 'delete', { id, deleted: true }, 'event');
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to delete event' });
