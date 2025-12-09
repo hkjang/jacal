@@ -27,12 +27,12 @@ export default function HomePage() {
   // Fetch events and tasks
   const { data: events = [] } = useQuery<Event[]>({
     queryKey: ['events'],
-    queryFn: eventAPI.getAll,
+    queryFn: () => eventAPI.getAll(),
   });
 
   const { data: tasks = [] } = useQuery<Task[]>({
     queryKey: ['tasks'],
-    queryFn: taskAPI.getAll,
+    queryFn: () => taskAPI.getAll(),
   });
 
   return (

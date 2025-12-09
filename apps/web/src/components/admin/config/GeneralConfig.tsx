@@ -3,11 +3,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminAPI } from '../../../lib/adminApi';
 
-interface ConfigSection {
-  id: string;
-  icon: string;
-  title: string;
-}
+
 
 export default function GeneralConfig() {
   const { t } = useTranslation();
@@ -85,11 +81,7 @@ export default function GeneralConfig() {
     return <div className="loading">{t('common.loading', '로딩 중...')}</div>;
   }
 
-  const sections: ConfigSection[] = [
-    { id: 'site', icon: '🌐', title: t('admin.siteSettings', '사이트 설정') },
-    { id: 'users', icon: '👥', title: t('admin.userSettings', '사용자 설정') },
-    { id: 'uploads', icon: '📤', title: t('admin.uploadSettings', '업로드 설정') },
-  ];
+
 
   return (
     <div className="general-config-container">
