@@ -132,7 +132,8 @@
   border-color: var(--color-primary);
 }
 
-.stats-grid {
+/* Dashboard Stats - renamed to avoid conflict with admin */
+.dashboard-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
@@ -178,34 +179,16 @@
   color: var(--color-text);
 }
 
-/* AdminPanel */
+/* AdminPanel - Moved to AdminPanel.css for better control */
+/* These are kept minimal to avoid conflicts */
 .admin-layout {
   display: flex;
   min-height: 100vh;
   background: var(--color-bg);
+  width: 100%;
 }
 
-.admin-content {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-}
-
-.admin-header {
-  margin-bottom: 2rem;
-}
-
-.admin-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--color-text);
-  margin-bottom: 0.5rem;
-}
-
-.admin-subtitle {
-  font-size: 0.9375rem;
-  color: var(--color-text-secondary);
-}
+/* admin-content is now controlled by AdminPanel.css */
 
 /* Responsive */
 @media (max-width: 768px) {

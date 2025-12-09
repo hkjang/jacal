@@ -34,7 +34,7 @@ export default function SystemStats() {
   return (
     <div className="admin-section">
       <h2>{t('admin.stats', '시스템 통계')}</h2>
-      
+
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-icon">🖥️</div>
@@ -83,23 +83,42 @@ export default function SystemStats() {
 
       <style>{`
         .admin-section {
-          padding: 1rem;
-          background: var(--bg-secondary);
-          border-radius: 8px;
+          padding: 0;
+          background: transparent;
+        }
+
+        .admin-section h2 {
+          margin: 0 0 1.5rem 0;
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: var(--text-primary);
         }
 
         .stats-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          grid-template-columns: repeat(4, 1fr);
           gap: 1rem;
-          margin: 1.5rem 0;
+          margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 1200px) {
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 768px) {
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
         }
 
         .stat-card {
-          background: var(--bg-tertiary);
+          background: var(--bg-secondary);
           padding: 1.5rem;
-          border-radius: 8px;
+          border-radius: 12px;
           text-align: center;
+          border: 1px solid var(--border);
         }
 
         .stat-icon {
@@ -127,10 +146,11 @@ export default function SystemStats() {
         }
 
         .system-info {
-          margin-top: 2rem;
-          background: var(--bg-tertiary);
+          margin-top: 1rem;
+          background: var(--bg-secondary);
           padding: 1.5rem;
-          border-radius: 8px;
+          border-radius: 12px;
+          border: 1px solid var(--border);
         }
 
         .system-info h3 {
