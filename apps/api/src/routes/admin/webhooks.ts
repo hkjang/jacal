@@ -92,12 +92,46 @@ router.post('/:id/test', authMiddleware, adminMiddleware, async (req: Request, r
       return res.status(404).json({ error: 'Webhook not found' });
     }
 
-    // In production, send actual HTTP request to webhook URL
-    // For now, just return success
-    res.json({ success: true, message: `Test webhook sent to ${webhook.url}` });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to test webhook' });
+    // Create test payload
+    const testPayload = {
+      event: 'webhook.test',
+      timestamp: new Date().toISOString(),
+      data: {
+        message: 'This is a test webhook from Jacal',
+        webhookId: webhook.id,
+        webhookName: webhook.name,
+      },
+    };
+
+    // Send actual HTTP request to webhook URL
+    const response = await fetch(webhook.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(testPayload),
+    });
+
+    if (response.ok) {
+      res.json({
+        success: true,
+        message: `Test webhook sent successfully to ${webhook.url}`,
+        status: response.status,
+      });
+    } else {
+      const errorText = await response.text();
+      res.status(400).json({
+        success: false,
+        error: `Webhook returned error: ${response.status} ${response.statusText}`,
+        details: errorText.substring(0, 500),
+      });
+    }
+  } catch (error: any) {
+    console.error('Webhook test error:', error);
+    res.status(500).json({
+      error: 'Failed to test webhook',
+      details: error.message || 'Network error or invalid URL',
+    });
   }
 });
 

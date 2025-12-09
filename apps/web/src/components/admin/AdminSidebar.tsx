@@ -70,7 +70,6 @@ export default function AdminSidebar({ currentSection, onSectionChange, onExit }
         { id: 'health', icon: '💚', label: t('admin.health', '상태 모니터') },
         { id: 'database', icon: '🗄️', label: t('admin.database', '데이터베이스') },
         { id: 'backups', icon: '💾', label: t('admin.backups', '백업') },
-        { id: 'logs', icon: '📄', label: t('admin.logs', '서버 로그') },
       ],
     },
     {

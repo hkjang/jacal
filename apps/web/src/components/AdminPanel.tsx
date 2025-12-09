@@ -21,7 +21,7 @@ import AdoptionStats from './admin/analytics/AdoptionStats';
 import SystemHealth from './admin/system/SystemHealth';
 import DatabaseManager from './admin/system/DatabaseManager';
 import BackupManager from './admin/system/BackupManager';
-import ServerLogs from './admin/system/ServerLogs';
+
 import GeneralConfig from './admin/config/GeneralConfig';
 import IntegrationsAdmin from './admin/config/IntegrationsAdmin';
 import WebhooksConfig from './admin/config/WebhooksConfig';
@@ -84,7 +84,7 @@ export default function AdminPanel({ onExit }: AdminPanelProps) {
     { id: 'health', title: t('admin.health', '시스템 상태'), type: 'menu', icon: '💚', section: 'health' },
     { id: 'database', title: t('admin.database', '데이터베이스'), type: 'menu', icon: '🗃️', section: 'database' },
     { id: 'backups', title: t('admin.backups', '백업 관리'), type: 'menu', icon: '💾', section: 'backups' },
-    { id: 'logs', title: t('admin.logs', '서버 로그'), type: 'menu', icon: '📜', section: 'logs' },
+
     { id: 'general', title: t('admin.general', '일반 설정'), type: 'menu', icon: '⚙️', section: 'general' },
     { id: 'integrations', title: t('admin.integrations', '통합 설정'), type: 'menu', icon: '🔗', section: 'integrations' },
     { id: 'webhooks', title: t('admin.webhooks', '웹훅 설정'), type: 'menu', icon: '🪝', section: 'webhooks' },
@@ -257,8 +257,7 @@ export default function AdminPanel({ onExit }: AdminPanelProps) {
         return <DatabaseManager />;
       case 'backups':
         return <BackupManager />;
-      case 'logs':
-        return <ServerLogs />;
+
       case 'general':
         return <GeneralConfig />;
       case 'integrations':
