@@ -8,7 +8,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  timezone?: string;
+  timezone: string;
 }
 
 export interface Task {

@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import prisma from '../lib/prisma';
+import { getCurrentTimeForTimezone, getTimezoneOffsetString } from '../lib/timezone';
 
 export interface ParsedEntity {
   action: 'create' | 'update' | 'delete';
@@ -58,8 +59,8 @@ export async function parseNaturalLanguage(input: string, userId: string, timezo
     const { client, model } = await getOpenAIClient(userId);
 
     const systemPrompt = `You are a natural language parser for a productivity app. Parse user input and extract tasks or events with their intended action.
-Current timezone: ${timezone}
-Current date/time: ${new Date().toISOString()}
+Current timezone: ${timezone} (UTC${getTimezoneOffsetString(timezone)})
+Current date/time: ${getCurrentTimeForTimezone(timezone)}
 
 Rules:
 1. Determine the ACTION: "create", "update", or "delete"
@@ -141,8 +142,8 @@ export async function parseEmailContent(subject: string, body: string, userId: s
     const { client, model } = await getOpenAIClient(userId);
 
     const systemPrompt = `You are a personal assistant that extracts schedule information from emails.
-Current timezone: ${timezone}
-Current date/time: ${new Date().toISOString()}
+Current timezone: ${timezone} (UTC${getTimezoneOffsetString(timezone)})
+Current date/time: ${getCurrentTimeForTimezone(timezone)}
 
 Rules:
 1. Analyze the email subject and body.

@@ -28,7 +28,7 @@ model User {
   email         String   @unique
   name          String
   passwordHash  String?
-  timezone      String   @default("UTC")
+  timezone      String   @default("Asia/Seoul")
   preferences   Json?
   isAdmin       Boolean  @default(false)
   role          UserRole @default(USER)

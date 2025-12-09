@@ -11,6 +11,8 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://jacal:jacal123@postgres:5432/jacal?schema=public
       - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      # 기본 시간대 설정 (Asia/Seoul = UTC+9)
+      - TZ=${TZ:-Asia/Seoul}
       # VITE_API_URL을 설정하면 자동으로 CORS 허용 목록에 추가됩니다
       - CORS_ORIGINS=${CORS_ORIGINS:-}
       - VITE_API_URL=${VITE_API_URL:-}
