@@ -48,8 +48,20 @@ export default function BackupManager() {
     }
   };
 
-  const lastBackup = backupsData?.data?.[0]?.createdAt 
-    ? new Date(backupsData.data[0].createdAt) 
+  const handleDownloadBackup = async (id: string, filename: string) => {
+    try {
+      await adminAPI.downloadBackup(id, filename);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        alert(t('admin.backupFileNotFound', '백업 파일을 찾을 수 없습니다. 새로 백업을 생성해주세요.'));
+      } else {
+        alert(t('admin.downloadFailed', '다운로드 실패: ') + (error.response?.data?.error || error.message));
+      }
+    }
+  };
+
+  const lastBackup = backupsData?.data?.[0]?.createdAt
+    ? new Date(backupsData.data[0].createdAt)
     : null;
 
   return (
@@ -64,7 +76,7 @@ export default function BackupManager() {
             <h3>Last Backup</h3>
             <p className="info-value">{lastBackup ? lastBackup.toLocaleString() : 'None'}</p>
             <p className="info-subtext">
-              {lastBackup 
+              {lastBackup
                 ? `${Math.floor((Date.now() - lastBackup.getTime()) / 60000)} minutes ago`
                 : 'No backups yet'}
             </p>
@@ -91,8 +103,8 @@ export default function BackupManager() {
       </div>
 
       <div className="backup-actions">
-        <button 
-          className="backup-button" 
+        <button
+          className="backup-button"
           onClick={handleBackupNow}
           disabled={createBackupMutation.isPending}
         >
@@ -126,8 +138,13 @@ export default function BackupManager() {
                       </span>
                     </td>
                     <td>
-                      <button className="action-btn">⬇️ Download</button>
-                      <button 
+                      <button
+                        className="action-btn"
+                        onClick={() => handleDownloadBackup(backup.id, backup.filename)}
+                      >
+                        ⬇️ Download
+                      </button>
+                      <button
                         className="action-btn delete-btn"
                         onClick={() => handleDeleteBackup(backup.id)}
                         disabled={deleteBackupMutation.isPending}

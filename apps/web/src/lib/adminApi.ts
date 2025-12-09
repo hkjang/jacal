@@ -211,6 +211,43 @@ export const adminAPI = {
     return res.data;
   },
 
+  downloadBackup: async (id: string, filename: string): Promise<void> => {
+    try {
+      const res = await api.get(`/api/admin/backups/${id}/download`, {
+        responseType: 'blob',
+      });
+
+      // Check if the response is an error (JSON) disguised as blob
+      if (res.data.type === 'application/json') {
+        const text = await res.data.text();
+        const errorData = JSON.parse(text);
+        throw new Error(errorData.error || 'Download failed');
+      }
+
+      // Create a download link
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      // Re-throw with proper error info for Blob responses
+      if (error.response?.data instanceof Blob) {
+        const text = await error.response.data.text();
+        try {
+          const parsed = JSON.parse(text);
+          error.message = parsed.error || 'Download failed';
+        } catch {
+          error.message = text || 'Download failed';
+        }
+      }
+      throw error;
+    }
+  },
+
   // Settings Management
   getSettings: async (): Promise<any> => {
     const res = await api.get('/api/admin/settings');
